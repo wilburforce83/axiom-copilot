@@ -26,3 +26,5 @@ let userTokenBody = {
     console.error("Error:", error);
   }
 })();
+
+// Wait until API access is opened up and see what we can do!
