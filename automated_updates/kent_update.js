@@ -39,7 +39,7 @@ const kent_update = async () => {
 
       if (liveDataResult) {
         let liveValues = await canary.getCurrentValues(credentials);
-        var g2g = Math.floor(liveValues.data["GreenCreate.Kent.Elster.GEU_Grid"][0].v);
+        var g2g = liveValues.data["GreenCreate.Kent.Elster.GEU_Grid"][0].v.toFixed(2);
         var biogasProduction = liveValues.data["GreenCreate.Kent.Flow.FT1200_PV"][0].v.toFixed(2);
         var CHPkwh = liveValues.data["GreenCreate.Kent.CHP.CHP_Act_Power"][0].v.toFixed(2);
         var d1pres = liveValues.data["GreenCreate.Kent.Pressure.PT1021_PV"][0].v.toFixed(2);
@@ -62,7 +62,6 @@ const kent_update = async () => {
         </span></li>\n  <li><span style=\"color: rgb(61,142,185)\">Digester Pressure (mbar) =&nbsp;`+digPress+`
         </span></li>\n  <li><span style=\"color: rgb(61,142,185)\">Combi bag gas pressure (mbar) =&nbsp;`+combiPress+`
         </span></li>\n  <li><span style=\"color: rgb(61,142,185)\">Digestate pit level (% trending up or down?) =&nbsp;`+effPitTrend+`
-        </span></li>\n  <li><span style=\"color: rgb(61,142,185)\">Buckets in hopper since 00:00 (#) =&nbsp;
         </span></li>\n  <li><span style=\"color: rgb(61,142,185)\">Feed loop running? (Y/N)
         </span></li>\n  <li><span style=\"color: rgb(61,142,185)\">AR running (Y/N)
         </span></li>\n  <li><span style=\"color: rgb(61,142,185)\">Decanter running (Y/N)
