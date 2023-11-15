@@ -21,10 +21,31 @@ let userTokenBody = {
 (async () => {
   try {
     let result = await canary.getUserToken(credentials, userTokenBody);
-    console.log("User Token : " + result.userToken);
+    console.log("getusertoken", result);
+
+    // Make sure browseTags returns a promise
+    let browseTagsResult = await canary.browseTags(credentials);
+    console.log("Browse tags", browseTagsResult);
+    // Check if browseTags was successful before calling getLiveDataToken
+    if (browseTagsResult) {
+      let liveDataResult = await canary.getLiveDataToken(credentials);
+      console.log("Live Data Result", liveDataResult);
+      if (liveDataResult) {
+        let liveValues = await canary.getCurrentValues(credentials, {
+          tags: ["GreenCreate.Kent.Flow.FT1200_PV"],
+        });
+        const dataArray = liveValues.data["GreenCreate.Kent.Flow.FT1200_PV"];
+        const firstObject = dataArray[0].v;
+
+        console.log('Kent Biogas Production:',firstObject);
+      }
+    } else {
+      console.log("Error in browseTags. Cannot proceed to getLiveDataToken.");
+    }
   } catch (error) {
     console.error("Error:", error);
   }
 })();
+
 
 // Wait until API access is opened up and see what we can do!
