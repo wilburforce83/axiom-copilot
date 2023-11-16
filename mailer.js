@@ -19,8 +19,8 @@ module.exports = {
       subject: subject,
       html: message,
     };
-    console.log("transporter", transporter);
-    console.log("mail", mail);
+   // console.log("transporter", transporter);
+   // console.log("mail", mail);
     transporter.sendMail(mail, (error, info) => {
       if (error) {
         console.log(error);
