@@ -51,7 +51,7 @@ function runKentUpdates() {
       } else {
         console.log(`Not a triggering time: ${new Date()}`);
       }
-    }, 300000);
+    }, 120000);
   }
   // Start checking for specific times
   runKentUpdates();
