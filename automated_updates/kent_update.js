@@ -131,7 +131,7 @@ const kent_update = async () => {
         console.log("4h trend", effPitTrend2);
 
         // AI Assistant
-        var advice = "no further advice at this time.";
+        var advice = "";
         var advice2 = "";
         var advice3 = "";
 
@@ -236,6 +236,12 @@ const kent_update = async () => {
             "One or more digester feed pressure is running below 0.75 bar. Consider increasing feed rate or lowering dilution to keep feed DS% consistent";
         }
 
+        var intro = "";
+
+        if (advice !== "" || advice2 !== "" || advice3 !== "") {
+          intro = "GC Copilot;"
+        }
+
         let emailBody =
           `
         <p><span style=\"font-family: arial\"><strong></strong></span><span style=\"color: rgb(61,142,185)\"><strong><br>\n<br>\n</strong></span><span style=\"color: rgb(61,142,185)\">Site Live data:<br>\n</span></p> <br>\n<ol>\n  <li><span style=\"color: rgb(61,142,185)\">
@@ -270,7 +276,7 @@ const kent_update = async () => {
         </span></li>\n  <li><span style=\"color: rgb(61,142,185)\">Decanter running (Y/N) ` +
           decanterStatus +
           `
-        </span></li>\n</ol>\n<br>\n</strong>GC Copilot;</span><span style=\"color: rgb(61,142,185)\">
+        </span></li>\n</ol>\n<br>\n</strong>`+intro+`</span><span style=\"color: rgb(61,142,185)\">
         
          ` +
           advice +
@@ -285,7 +291,7 @@ const kent_update = async () => {
 
         `;
 
-        email.send(emailBody, "will@green-create.com", "Axiom testing");
+        email.send(emailBody, "greencreatedata@outlook.com", "Kent Axiom Update");
       }
     } else {
       console.log("Error in browseTags. Cannot proceed to getLiveDataToken.");
