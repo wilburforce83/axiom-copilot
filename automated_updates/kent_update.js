@@ -132,6 +132,10 @@ const kent_update = async () => {
 
         // AI Assistant
         var advice = "no further advice at this time.";
+        var advice2 = "";
+        var advice3 = "";
+
+        // MASS BALANCE ADVICE
         if (
           massDelta.delta > 0 &&
           effPitTrend1 == "trending up" &&
@@ -144,7 +148,7 @@ const kent_update = async () => {
             massDelta.info +
             " feed pumps and decanter of " +
             Math.floor(massDelta.delta) +
-            "m3/hr. Recommendation to increased the decanter by " +
+            "m3/hr. Recommendation to increase the decanter by " +
             Math.floor(massDelta.delta) +
             "m3/hr, if possible to balance the flowrate, or " +
             Math.floor(massDelta.delta + 0.5) +
@@ -170,9 +174,71 @@ const kent_update = async () => {
             "m3/hr, unless you are intentionally holding liquids in the effluent pit.";
         }
 
+        if (
+          massDelta.delta < 0 &&
+          effPitTrend1 == "a flat trend" &&
+          effPitTrend2 == "trending down"
+        ) {
+          advice =
+            "Effluent pit is " +
+            effPitTrend1 +
+            " over 2 hours, but " +
+            effPitTrend2 +
+            " over a 4 hour trend, delta across the digesters shows a " +
+            massDelta.info +
+            " feed pumps and decanter of " +
+            Math.floor(massDelta.delta) +
+            "m3/hr. Recommendation to decrease the decanter by " +
+            Math.floor(massDelta.delta) +
+            "m3/hr, if possible to balance the flowrate, or " +
+            Math.floor(massDelta.delta + 0.5) +
+            "m3/hr to slowly allow the effluent pit to rise.";
+        }
+
+        if (
+          massDelta.delta < 0 &&
+          effPitTrend1 == "trending down" &&
+          effPitTrend2 == "trending down"
+        ) {
+          advice =
+            "Effluent pit is " +
+            effPitTrend1 +
+            " over the 2 hour and 4 hour trend, delta across the digesters shows a " +
+            massDelta.info +
+            " feed pumps and decanter of " +
+            Math.floor(massDelta.delta) +
+            "m3/hr. Consider to decreasing the decanter by " +
+            Math.floor(massDelta.delta) +
+            "m3/hr, unless you are intentionally lowering the level in the effluent pit.";
+        }
+
+        // FEED PRESSURE ADVICE
+
+        if (
+          helper.returnStatus(tVal["GreenCreate.Kent.Flow.FT1021_PV"], 1) ==
+            "yes" &&
+          helper.returnStatus(tVal["GreenCreate.Kent.Flow.FT1022_PV"], 1) ==
+            "yes" &&
+          (d1pres > 4 || d2pres > 4)
+        ) {
+          advice2 =
+            "One or more digester feed pressure is running over 4 bar. Consider lowering feed rate or increasing dilution to keep feed DS% consistent";
+        }
+
+        if (
+          helper.returnStatus(tVal["GreenCreate.Kent.Flow.FT1021_PV"], 1) ==
+            "yes" &&
+          helper.returnStatus(tVal["GreenCreate.Kent.Flow.FT1022_PV"], 1) ==
+            "yes" &&
+          (d1pres < 0.75 || d2pres > 0.75)
+        ) {
+          advice2 =
+            "One or more digester feed pressure is running below 0.75 bar. Consider increasing feed rate or lowering dilution to keep feed DS% consistent";
+        }
+
         let emailBody =
           `
-        <p><span style=\"font-family: arial\"><strong>SITE UPDATE FROM AXIOM</strong></span><span style=\"color: rgb(61,142,185)\"><strong><br>\n<br>\n</strong></span><span style=\"color: rgb(61,142,185)\">Live data:<br>\n</span></p> <br>\n<ol>\n  <li><span style=\"color: rgb(61,142,185)\">
+        <p><span style=\"font-family: arial\"><strong></strong></span><span style=\"color: rgb(61,142,185)\"><strong><br>\n<br>\n</strong></span><span style=\"color: rgb(61,142,185)\">Site Live data:<br>\n</span></p> <br>\n<ol>\n  <li><span style=\"color: rgb(61,142,185)\">
         G2G (m3/hr) =&nbsp;` +
           g2g +
           `
@@ -204,10 +270,15 @@ const kent_update = async () => {
         </span></li>\n  <li><span style=\"color: rgb(61,142,185)\">Decanter running (Y/N) ` +
           decanterStatus +
           `
-        </span></li>\n</ol>\n<br>\n</strong></span><span style=\"color: rgb(61,142,185)\">
+        </span></li>\n</ol>\n<br>\n</strong>GC Copilot;</span><span style=\"color: rgb(61,142,185)\">
         
-        GC Copilot; ` +
+         ` +
           advice +
+          `<br><br>` +
+          advice2 +
+          `<br><br>` +
+          advice3 +
+          `<br><br>` +
           `
         
         <br>\n</span></p>\n

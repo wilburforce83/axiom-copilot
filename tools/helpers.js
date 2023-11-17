@@ -99,6 +99,24 @@ function addArrays(arr1, arr2) {
   return newArr;
 }
 
+
+function analyzeTrend(array, threshold) {
+  if (!Array.isArray(array) || array.length < 2) {
+    return { error: "Input should be an array with at least two elements." };
+  }
+
+  const firstHalf = array.slice(0, Math.floor(array.length / 2));
+  const secondHalf = array.slice(Math.floor(array.length / 2));
+
+  const meanFirstHalf = firstHalf.reduce((sum, value) => sum + value, 0) / firstHalf.length;
+  const meanSecondHalf = secondHalf.reduce((sum, value) => sum + value, 0) / secondHalf.length;
+
+  const vector = meanSecondHalf - meanFirstHalf;
+  const trendInfo = vector < threshold ? "The trend is flat." : "The trend is increasing/decreasing.";
+
+  return { vector: vector, info: trendInfo };
+}
+
 // Export the functions as properties of an object
 module.exports = {
   extractValues,
@@ -107,6 +125,7 @@ module.exports = {
   calculateArrAverage,
   returnStatus,
   addArrays,
+  analyzeTrend,
 
   // Add other functions here
 };
