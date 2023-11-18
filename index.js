@@ -1,4 +1,5 @@
 const kent_update = require("./automated_updates/kent_update"); // trigger an Axiom email update for Kent
+const kent_pondWater = require("./automated_updates/kent_pondWater"); // trigger an Axiom email update for Kent
 
 console.log(
   `
@@ -55,3 +56,20 @@ function runKentUpdates() {
   }
   // Start checking for specific times
   runKentUpdates();
+
+
+  
+  function runEveryThreeHours() {
+    const intervalInMilliseconds = 3 * 60 * 60 * 1000; // 3 hours in milliseconds
+  
+    // Run the function initially
+    kent_pondWater();
+  
+    // Set up the recurring interval
+    setInterval(async () => {
+      await kent_pondWater();
+    }, intervalInMilliseconds);
+  }
+  
+  // Start the recurring function
+  runEveryThreeHours();

@@ -117,6 +117,45 @@ function analyzeTrend(array, threshold) {
   return { vector: vector, info: trendInfo };
 }
 
+function calculateTotalVolume(flowReadings) {
+  // Convert seconds to hours
+  const timeInHours = flowReadings.length / 3600;
+
+  // Calculate total volume
+  const totalVolume = flowReadings.reduce((acc, flowRate) => acc + flowRate, 0) / 3600;
+
+  // Return result
+  return {
+    elapsedTime: Number(timeInHours.toFixed(2)),
+    volume: Number(totalVolume.toFixed(2))
+  };
+}
+
+function calculateTimeAboveThreshold(flowReadings, threshold) {
+  // Convert seconds to hours
+  const timeInHours = flowReadings.length / 3600;
+
+  // Calculate time running above the threshold
+  const timeAboveThreshold = flowReadings.reduce((acc, flowRate) => {
+    if (flowRate > threshold) {
+      return acc + 1; // Assuming each reading represents 1 second
+    }
+    return acc;
+  }, 0) / 3600;
+
+  // Truncate results to two decimal places
+  const truncatedTime = Number(timeInHours.toFixed(2));
+  const truncatedTimeAboveThreshold = Number(timeAboveThreshold.toFixed(2));
+
+  // Return result
+  return {
+    elapsedTime: Number(truncatedTime.toFixed(2)),
+    timeRunning: Number(truncatedTimeAboveThreshold.toFixed(2))
+  };
+}
+
+
+
 // Export the functions as properties of an object
 module.exports = {
   extractValues,
@@ -124,8 +163,10 @@ module.exports = {
   arrayDeltaComparator,
   calculateArrAverage,
   returnStatus,
+  calculateTotalVolume,
   addArrays,
   analyzeTrend,
+  calculateTimeAboveThreshold,
 
   // Add other functions here
 };
