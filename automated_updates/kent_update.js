@@ -151,7 +151,7 @@ const kent_update = async () => {
             "m3/hr. Recommendation to increase the decanter by " +
             Math.floor(massDelta.delta) +
             "m3/hr, if possible to balance the flowrate, or " +
-            Math.floor(massDelta.delta + 0.5) +
+            (Math.floor(massDelta.delta)+ 0.5) +
             "m3/hr to slowly bring the effluent pit level down.";
         }
 
