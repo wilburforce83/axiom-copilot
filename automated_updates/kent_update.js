@@ -104,6 +104,8 @@ const kent_update = async () => {
         var biogasProduction =
           tVal["GreenCreate.Kent.Flow.FT1200_PV"].toFixed(2);
         var CHPkwh = tVal["GreenCreate.Kent.CHP.CHP_Act_Power"].toFixed(2);
+        var CHPgas = tVal["GreenCreate.Kent.CHP.FT2001_PV"].toFixed(2);
+        var CHPeff = CHPgas/(CHPkwh/1000);
         var d1pres = tVal["GreenCreate.Kent.Pressure.PT1021_PV"].toFixed(2);
         var d2pres = tVal["GreenCreate.Kent.Pressure.PT1022_PV"].toFixed(2);
         var digPress = tVal["GreenCreate.Kent.Pressure.PT1200_PV"].toFixed(2);
@@ -250,6 +252,12 @@ const kent_update = async () => {
           `
         </span></li>\n  <li><span style=\"color: rgb(61,142,185)\">CHP (kWh) =&nbsp;` +
           CHPkwh +
+          `
+          </span></li>\n  <li><span style=\"color: rgb(61,142,185)\">CHP (m3/hr) =&nbsp;` +
+          CHPgas +
+          `
+          </span></li>\n  <li><span style=\"color: rgb(61,142,185)\">CHP (m3/MWh) =&nbsp;` +
+          CHPeff +
           `
         </span></li>\n  <li><span style=\"color: rgb(61,142,185)\">Biogas production (m3/hr) =&nbsp;` +
           biogasProduction +
