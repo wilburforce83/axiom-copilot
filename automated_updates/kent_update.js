@@ -85,6 +85,50 @@ const kent_update = async () => {
       decanterFr.data["GreenCreate.Kent.Flow.FT1701_PV"]
     );
 
+    let CHPtotalRaw = await canary.getProcessedData(credentials,{
+      
+        "userToken": "{{UserToken}}",
+        "tags": ["GreenCreate.Kent.CHP.CHP_Act_Power_Tot"],
+        "startTime": "00:00",
+        "endTime": "now",
+        "maxSize": 10,
+        "aggregateName": "Delta",
+        "aggregateInterval": "24 hours"
+      
+    });
+
+    let G2GtotalRaw = await canary.getProcessedData(credentials,{
+      
+      "userToken": "{{UserToken}}",
+      "tags": ["GreenCreate.Kent.Elster.FT2532_Tot"],
+      "startTime": "00:00",
+      "endTime": "now",
+      "maxSize": 10,
+      "aggregateName": "Delta",
+      "aggregateInterval": "24 hours"
+    
+  });
+
+  
+
+  let PropanetotalRaw = await canary.getProcessedData(credentials,{
+      
+    "userToken": "{{UserToken}}",
+    "tags": ["GreenCreate.Kent.Elster.RPD2408_Tot"],
+    "startTime": "00:00",
+    "endTime": "now",
+    "maxSize": 10,
+    "aggregateName": "Delta",
+    "aggregateInterval": "24 hours"
+  
+});
+
+    var CHPTotaliser = (CHPtotalRaw.data["GreenCreate.Kent.CHP.CHP_Act_Power_Tot"][0].v).toFixed(0);
+
+    var G2GTotaliser = (G2GtotalRaw.data["GreenCreate.Kent.Elster.FT2532_Tot"][0].v).toFixed(0);
+
+    var PropaneTotaliser = (PropanetotalRaw.data["GreenCreate.Kent.Elster.RPD2408_Tot"][0].v).toFixed(0);
+
     let digesterFeed = helper.addArrays(frResult1Arr, frResult2Arr);
 
     let massDelta = helper.arrayDeltaComparator(digesterFeed, decanterFrArr);
@@ -105,7 +149,7 @@ const kent_update = async () => {
           tVal["GreenCreate.Kent.Flow.FT1200_PV"].toFixed(2);
         var CHPkwh = tVal["GreenCreate.Kent.CHP.CHP_Act_Power"].toFixed(2);
         var CHPgas = tVal["GreenCreate.Kent.CHP.FT2001_PV"].toFixed(2);
-        var CHPeff = CHPgas/(CHPkwh/1000);
+        var CHPeff = (CHPgas/(CHPkwh/1000)).toFixed(2);
         var d1pres = tVal["GreenCreate.Kent.Pressure.PT1021_PV"].toFixed(2);
         var d2pres = tVal["GreenCreate.Kent.Pressure.PT1022_PV"].toFixed(2);
         var digPress = tVal["GreenCreate.Kent.Pressure.PT1200_PV"].toFixed(2);
@@ -244,15 +288,19 @@ const kent_update = async () => {
           intro = "GC Copilot;"
         }
 
+       
         let emailBody =
           `
         <p><span style=\"font-family: arial\"><strong></strong></span><span style=\"color: rgb(61,142,185)\"><strong><br>\n<br>\n</strong></span><span style=\"color: rgb(61,142,185)\">Site Live data:<br>\n</span></p> <br>\n<ol>\n  <li><span style=\"color: rgb(61,142,185)\">
         G2G (m3/hr) =&nbsp;` +
-          g2g +
+          g2g + ` (<strong>`+ G2GTotaliser +` m3 since 00:00</strong>)
+          </span></li>\n  <li><span style=\"color: rgb(61,142,185)\">Propane usage (m3 since 00:00) =&nbsp;` +
+          PropaneTotaliser +
           `
+          
         </span></li>\n  <li><span style=\"color: rgb(61,142,185)\">CHP (kWh) =&nbsp;` +
-          CHPkwh +
-          `
+          CHPkwh + ` (<strong>`+CHPTotaliser+` kWh since 00:00</strong>)
+          
           </span></li>\n  <li><span style=\"color: rgb(61,142,185)\">CHP (m3/hr) =&nbsp;` +
           CHPgas +
           `
@@ -299,7 +347,7 @@ const kent_update = async () => {
 
         `;
 
-        email.send(emailBody, "greencreatedata@outlook.com", "Kent Axiom Update");
+        email.send(emailBody, "will@green-create.com", "Kent Axiom Update"); // greencreatedata@outlook.com
       }
     } else {
       console.log("Error in browseTags. Cannot proceed to getLiveDataToken.");
