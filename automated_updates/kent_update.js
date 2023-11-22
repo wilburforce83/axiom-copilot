@@ -347,7 +347,7 @@ const kent_update = async () => {
 
         `;
 
-        email.send(emailBody, "will@green-create.com", "Kent Axiom Update"); // greencreatedata@outlook.com
+        email.send(emailBody, "greencreatedata@outlook.com", "Kent Axiom Update"); // greencreatedata@outlook.com
       }
     } else {
       console.log("Error in browseTags. Cannot proceed to getLiveDataToken.");
