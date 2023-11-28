@@ -1,0 +1,27 @@
+2023.11.28, 10:50:49.0719 UTC -> 2d8ed308-eff6-4bbb-add0-57bdce5a6748
+2023.11.28, 10:51:00.0827 UTC -> TypeError: Cannot read properties of null (reading 'toFixed')
+2023.11.28, 10:57:18.0270 UTC -> 05217d71-57c6-4153-a7ee-b274471c0305
+2023.11.28, 10:57:29.0639 UTC -> TypeError: Cannot read properties of null (reading 'toFixed')
+2023.11.28, 11:01:12.0986 UTC -> ec590f56-9df9-43ab-a8fa-e700ed34a607
+2023.11.28, 11:01:25.0067 UTC -> TypeError: Cannot read properties of null (reading 'toFixed')
+2023.11.28, 11:14:44.0967 UTC -> ef8cde21-d342-4726-891c-d81eafa14264
+2023.11.28, 11:14:56.0489 UTC -> TypeError: Cannot read properties of undefined (reading 'data')
+2023.11.28, 11:19:16.0987 UTC -> 2ecf6c4a-79b3-42f0-87a8-b237a75a13d5
+2023.11.28, 11:19:28.0197 UTC -> TypeError: Cannot read properties of undefined (reading 'data')
+2023.11.28, 11:20:23.0238 UTC -> b4c9dd1d-456b-4586-b35b-3af23bff414a
+2023.11.28, 11:20:34.0594 UTC -> TypeError: Cannot read properties of undefined (reading 'data')
+2023.11.28, 11:23:15.0239 UTC -> d780d29e-a07a-4bd7-935b-254b8348590b
+2023.11.28, 11:23:26.0659 UTC -> TypeError: Cannot read properties of undefined (reading 'GreenCreate.Kent.CHP.CHP_Act_Power_Tot')
+2023.11.28, 11:23:57.0932 UTC -> d5bf7ec5-7124-45f7-8fba-9ff8882b2ffc
+2023.11.28, 11:24:10.0175 UTC -> TypeError: Cannot read properties of null (reading 'toFixed')
+2023.11.28, 11:24:51.0116 UTC -> 3961e7b0-a86d-4af4-9ebe-8a3634389097
+2023.11.28, 11:25:03.0530 UTC -> TypeError: Cannot read properties of null (reading 'toFixed')
+2023.11.28, 11:26:04.0473 UTC -> de91438b-a8e3-40c5-92f8-f8a90e2dcbb4
+2023.11.28, 11:26:17.0062 UTC -> TypeError: Cannot read properties of null (reading 'toFixed')
+2023.11.28, 11:26:57.0848 UTC -> 0a54c8cc-e9d1-41c4-a672-35238103fe7f
+2023.11.28, 11:27:09.0310 UTC -> TypeError: Cannot read properties of null (reading 'toFixed')
+2023.11.28, 11:28:36.0584 UTC -> 548d94af-8f1c-4e71-850e-44f9baf25517
+2023.11.28, 11:28:48.0008 UTC -> TypeError: Cannot read properties of undefined (reading 'data')
+2023.11.28, 11:31:05.0626 UTC -> 5e4227e9-5de1-4efe-b94a-71bc2c88cc6f
+2023.11.28, 11:31:17.0111 UTC -> TypeError: Cannot read properties of undefined (reading 'data')
+2023.11.28, 11:31:47.0429 UTC -> 025cf992-fd1c-4b57-b3fb-fda3b89dc715

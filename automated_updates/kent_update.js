@@ -3,6 +3,8 @@ const email = require("../mailer"); // email.send(message, recipient, subject) a
 const helper = require("../tools/helpers");
 const kent_AI = require("./kent_ai");
 const canary = require("canarylabs-web-api"); // when using from npm use require('canarylabs-web-api')
+const log = require('log-to-file');
+const logfile = "log.txt";
 var tVal;
 
 // API collection
@@ -25,7 +27,7 @@ let userTokenBody = {
 const kent_update = async () => {
   try {
     let result = await canary.getUserToken(credentials, userTokenBody);
-    console.log("user token", result.userToken);
+    log(result.userToken,logfile);
 
     // Make sure browseTags returns a promise
     let browseTagsResult = await canary.browseTags(credentials);
@@ -123,6 +125,7 @@ const kent_update = async () => {
   
 });
 
+console.log("returned data example", CHPtotalRaw.data)
     var CHPTotaliser = (CHPtotalRaw.data["GreenCreate.Kent.CHP.CHP_Act_Power_Tot"][0].v).toFixed(0);
 
     var G2GTotaliser = (G2GtotalRaw.data["GreenCreate.Kent.Elster.FT2532_Tot"][0].v).toFixed(0);
@@ -347,13 +350,15 @@ const kent_update = async () => {
 
         `;
 
-        email.send(emailBody, "greencreatedata@outlook.com", "Kent Axiom Update"); // greencreatedata@outlook.com
+        email.send(emailBody, "will@green-create.com", "Kent Axiom Update"); // greencreatedata@outlook.com
       }
     } else {
       console.log("Error in browseTags. Cannot proceed to getLiveDataToken.");
+      log("Error in browseTags. Cannot proceed to getLiveDataToken.",logfile);
     }
   } catch (error) {
     console.error("Error:", error);
+    log(error,logfile);
   }
 };
 
