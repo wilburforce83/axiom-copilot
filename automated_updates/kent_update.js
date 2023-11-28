@@ -350,7 +350,13 @@ console.log("returned data example", CHPtotalRaw.data)
 
         `;
 
-        email.send(emailBody, "will@green-create.com", "Kent Axiom Update"); // greencreatedata@outlook.com
+        
+        try {
+          email.send(emailBody, "greencreatedata@outlook.com", "Kent Axiom Update"); // greencreatedata@outlook.com
+      } catch (error) {
+        log(error,logfile);
+      }
+        
       }
     } else {
       console.log("Error in browseTags. Cannot proceed to getLiveDataToken.");
