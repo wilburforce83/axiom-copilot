@@ -58,7 +58,7 @@ function runKentUpdates() {
   runKentUpdates();
 
 
-  
+  /*
   function runEveryThreeHours() {
     const intervalInMilliseconds = 3 * 60 * 60 * 1000; // 3 hours in milliseconds
   
@@ -73,3 +73,5 @@ function runKentUpdates() {
   
   // Start the recurring function
   runEveryThreeHours();
+
+  */

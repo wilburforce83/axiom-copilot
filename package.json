@@ -3,6 +3,9 @@
     "canarylabs-web-api": "^1.0.0",
     "dotenv": "^16.3.1",
     "log-to-file": "^3.0.3",
-    "nodemailer": "^6.9.7"
+    "nodemailer": "^6.9.7",
+    "qrcode-terminal": "^0.12.0",
+    "wbm": "^1.1.16",
+    "whatsapp-web.js": "^1.23.0"
   }
 }
