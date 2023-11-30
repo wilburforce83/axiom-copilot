@@ -154,6 +154,14 @@ function calculateTimeAboveThreshold(flowReadings, threshold) {
   };
 }
 
+function filterArrayByString(array, searchString) {
+  // Use the filter method to create a new array with objects that match the criteria
+  return array.filter(obj => {
+    // Check if the object has a key "name" and its value is equal to the searchString
+    return obj.hasOwnProperty('name') && obj.name === searchString;
+  });
+}
+
 
 
 // Export the functions as properties of an object
@@ -167,6 +175,7 @@ module.exports = {
   addArrays,
   analyzeTrend,
   calculateTimeAboveThreshold,
+  filterArrayByString,
 
   // Add other functions here
 };

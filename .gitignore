@@ -2,3 +2,5 @@ process.env
 node_modules
 log.txt
 session.json
+.wwebjs_auth
+.wwebjs_cache

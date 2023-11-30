@@ -19,7 +19,7 @@ const credentials = {
 
 let userTokenBody = {
   application: "Web API",
-  timezone: "Eastern Standard Time",
+  timezone: "GMT Standard Time",
 };
 
 // Kent Module

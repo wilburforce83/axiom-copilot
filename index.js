@@ -1,4 +1,5 @@
-const kent_update = require("./automated_updates/kent_update"); // trigger an Axiom email update for Kent
+const kent_update = require("./automated_updates/kent_update");
+const fgs_update = require("./automated_updates/fgs_update"); // trigger an Axiom email update for Kent
 const kent_pondWater = require("./automated_updates/kent_pondWater"); // trigger an Axiom email update for Kent
 
 console.log(
@@ -75,3 +76,37 @@ function runKentUpdates() {
   runEveryThreeHours();
 
   */
+
+  function scheduleFunction() {
+    // Get the current time
+    var now = new Date();
+    
+    // Calculate the time until the next 04:00, 12:00, or 20:00
+    var hours = now.getHours();
+    var nextRun;
+    
+    if (hours < 4) {
+      nextRun = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 4, 0, 0, 0);
+    } else if (hours < 12) {
+      nextRun = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0, 0);
+    } else if (hours < 15) {
+      nextRun = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 15, 0, 0, 0);
+    } else {
+      // If it's already past 20:00, schedule it for the next day at 04:00
+      nextRun = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 4, 0, 0, 0);
+    }
+  
+    // Calculate the time until the next run
+    var timeUntilNextRun = nextRun - now;
+  
+    // Set a timeout to run the function at the scheduled time
+    setTimeout(function () {
+      fgs_update();
+  
+      // Schedule the function to run again at the next interval
+      scheduleFunction();
+    }, timeUntilNextRun);
+  }
+
+  // Start the scheduling
+scheduleFunction();
