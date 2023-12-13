@@ -66,7 +66,7 @@ client.initialize();
 
 // Main FGS update function
 
-const fgs_update = async () => {
+const fgs_update = async (time) => {
     try {
         let result = await canary.getUserToken(credentials, userTokenBody);
         log(result.userToken, logfile);
@@ -106,24 +106,7 @@ const fgs_update = async () => {
             if (liveDataResult) {
                 tVal = await canary.storeLatestValues(credentials);
 
-                var decanterStatus = helper.returnStatus(
-                    tVal["GreenCreate.Kent.Flow.FT1701_PV"],
-                    8
-                );
-                var feedLoopStatus;
-
-                if (
-                    (helper.returnStatus(tVal["GreenCreate.Kent.Flow.FT1021_PV"], 1) ==
-                        "yes" &&
-                        helper.returnStatus(tVal["GreenCreate.Kent.Flow.FT1022_PV"], 1) ==
-                        "yes") ||
-                    helper.returnStatus(tVal["GreenCreate.Kent.Flow.FT1001_PV"], 1) ==
-                    "yes"
-                ) {
-                    feedLoopStatus = "yes";
-                } else {
-                    feedLoopStatus = "no";
-                }
+                var effPitLevel = tVal["GreenCreate.Kent.Level.LT1230_PV"];
 
 
                 let totalToBag = await canary.getProcessedData(credentials, {
@@ -160,7 +143,7 @@ const fgs_update = async () => {
 
                 });
 
-                console.log(averageToBag.data["GreenCreate.Kent.Flow.FT1711_Tot"][0].v)
+                //console.log(averageToBag.data["GreenCreate.Kent.Flow.FT1711_Tot"][0].v)
 
                 var BagTotaliser = (totalToBag.data["GreenCreate.Kent.Flow.FT1711_Tot"][0].v).toFixed(2);
                 var BagAvg = (((averageToBag.data["GreenCreate.Kent.Flow.FT1711_Tot"][0].v)) / 4).toFixed(2);
@@ -169,23 +152,13 @@ const fgs_update = async () => {
 
                 var hoursLeft = hoursUntilx(6);
                 var hoursLeftPM = hoursUntilx(16);
-                console.log("hour left",hoursLeft);
+                // console.log("hour left",hoursLeft);
                 // AI Assistant
                 var advice = "";
                 var estimate = "";
+                var sumMultiplier = 1;
+                var line1 = "";
 
-                if (hoursLeft < 8) {
-                    let sum = (parseInt(BagTotaliser)+(parseInt(BagAvg)*hoursLeft)).toFixed(1); // 0400 update
-                    estimate = "*Estimated required out at 0600hrs; "+sum+"m3*";
-                } 
-                
-                if (hoursLeft >= 8 && hoursLeft < 17) {
-                    let sum = (parseInt(BagAvg)*hoursLeft).toFixed(1); // 1500 update
-                    estimate = "*Estimated required out at 0600hrs; "+sum+"m3*";
-                }else {
-                    let sum = (parseInt(PMBag)+(parseInt(BagAvg)*hoursLeftPM)).toFixed(1);
-                    estimate = "*Estimated required at 1600hrs (final loads required for day); "+sum+"m3*"; // midday update
-                }
 
                 // MASS BALANCE ADVICE
                 if (
@@ -193,11 +166,15 @@ const fgs_update = async () => {
                     effPitTrend1 == "trending up" &&
                     effPitTrend2 == "trending up"
                 ) {
-                    
+
                     advice =
                         "Effluent pit is " +
                         effPitTrend1 +
                         " on 2 and 4 hour trends, we estimate increased push forward to the bag for the next 8 hours.";
+
+                    if (effPitLevel > 50) {
+                        sumMultiplier = 1.5;
+                    }
                 }
 
                 if (
@@ -211,6 +188,10 @@ const fgs_update = async () => {
                         " on 2 hours, but " +
                         effPitTrend2 +
                         " on 4 hour trend, we estimate a continued push forward to the bag for the next 8 hours.";
+
+                    if (effPitLevel > 50) {
+                        sumMultiplier = 1.25;
+                    }
                 }
 
                 if (
@@ -224,6 +205,10 @@ const fgs_update = async () => {
                         " over 2 hours, but " +
                         effPitTrend2 +
                         " over a 4 hour trend, we estimate a decreased push forward to the bag for the next 8 hours.";
+
+                    if (effPitLevel < 50) {
+                        sumMultiplier = 0.8;
+                    }
                 }
 
                 if (
@@ -235,22 +220,36 @@ const fgs_update = async () => {
                         "Effluent pit is " +
                         effPitTrend1 +
                         " over the 2 hour and 4 hour trend, we estimate a large reduction in push forward to the bag for the next 8 hours.";
+                    if (effPitLevel < 40) {
+                        sumMultiplier = 0.4;
+                    }
+                }
+
+//ESTIMATES
+
+                if (time == 4) {
+                    let sum = (parseInt(BagTotaliser) + (parseInt(BagAvg) * hoursLeft)).toFixed(1); // 0400 update
+                    estimate = "*Estimated required out at 0600hrs; " + sum + "m3*";
+                    line1 = `*` + BagTotaliser + `m3* sent to the bladder bag since 16:00.`; 
+                }
+
+                if (time == 15) {
+                    let sum = ((parseInt(BagAvg) * hoursLeft)*sumMultiplier).toFixed(1); // 1500 update
+                    estimate = "*Estimated required out at 0600hrs; " + sum + "m3*";
+                }
+
+                if (time == 12) {
+                    let sum = (parseInt(PMBag) + (parseInt(BagAvg) * hoursLeftPM)).toFixed(1);
+                    estimate = "*Estimated required at 1600hrs (final loads required for day); " + sum + "m3*"; // midday update
                 }
 
 
-
-
-
-
-
-
-
                 let whatsAppBody =
-                    `*` + BagTotaliser + `m3* sent to the bladder bag since 16:00. 
+                    ``+line1+`
 
 Current push forward is `+ BagAvg + `m3/hr. ` + advice + `. 
 
-`+estimate+`
+`+ estimate + `
 
 Thanks! 
 
@@ -259,7 +258,7 @@ This message is transmitted at 0400hrs and 1200hrs, and 1500hrs.
 
 
                 try {
-                   client.sendMessage(id, whatsAppBody);
+                    client.sendMessage(id, whatsAppBody);
                 } catch (error) {
                     log(error, logfile);
                 }
@@ -301,7 +300,3 @@ function hoursUntilx(targetHour) {
 
 
 module.exports = fgs_update;
-
-
-
-

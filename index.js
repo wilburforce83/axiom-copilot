@@ -101,7 +101,7 @@ function runKentUpdates() {
   
     // Set a timeout to run the function at the scheduled time
     setTimeout(function () {
-      fgs_update();
+      fgs_update(hours);
   
       // Schedule the function to run again at the next interval
       scheduleFunction();
