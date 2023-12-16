@@ -36,7 +36,7 @@ client.on('ready', () => {
     (async () => {
         try {
             const chats = await client.getChats();
-            let chat = helper.filterArrayByString(chats, "Green Create/ FGS ");
+            let chat = helper.filterArrayByString(chats, "Green Create/ FGS ");  // "Green Create/ FGS " "Kent Ops (internal)"
             console.log(chat[0].id._serialized);
             id = chat[0].id._serialized;
             // Now you can use the 'chats' variable in the rest of your code
@@ -66,7 +66,10 @@ client.initialize();
 
 // Main FGS update function
 
-const fgs_update = async (time) => {
+const fgs_update = async () => {
+
+    var now = new Date();
+    var hours = now.getHours()
     try {
         let result = await canary.getUserToken(credentials, userTokenBody);
         log(result.userToken, logfile);
@@ -225,29 +228,30 @@ const fgs_update = async (time) => {
                     }
                 }
 
-//ESTIMATES
+                //ESTIMATES
 
-                if (time == 4) {
+                if (hours == 4) {
                     let sum = (parseInt(BagTotaliser) + (parseInt(BagAvg) * hoursLeft)).toFixed(1); // 0400 update
                     estimate = "*Estimated required out at 0600hrs; " + sum + "m3*";
-                    line1 = `*` + BagTotaliser + `m3* sent to the bladder bag since 16:00.`; 
+                    line1 = `*` + BagTotaliser + `m3* sent to the bladder bag since 16:00.
+                    `; 
+                    log("0400 Estimate was triggered time sent was "+hours+" output : "+estimate,logfile)
                 }
 
-                if (time == 15) {
+                if (hours == 15) {
                     let sum = ((parseInt(BagAvg) * hoursLeft)*sumMultiplier).toFixed(1); // 1500 update
                     estimate = "*Estimated required out at 0600hrs; " + sum + "m3*";
+                    log("1500 Estimate was triggered time sent was "+hours+" output : "+estimate,logfile)
                 }
 
-                if (time == 12) {
+                if (hours == 12) {
                     let sum = (parseInt(PMBag) + (parseInt(BagAvg) * hoursLeftPM)).toFixed(1);
                     estimate = "*Estimated required at 1600hrs (final loads required for day); " + sum + "m3*"; // midday update
+                    log("1200 Estimate was triggered time sent was "+hours+" output : "+estimate,logfile)
                 }
 
-
                 let whatsAppBody =
-                    ``+line1+`
-
-Current push forward is `+ BagAvg + `m3/hr. ` + advice + `. 
+                    ``+line1+`Current push forward is `+ BagAvg + `m3/hr. ` + advice + `. 
 
 `+ estimate + `
 

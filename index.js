@@ -95,13 +95,14 @@ function runKentUpdates() {
       // If it's already past 20:00, schedule it for the next day at 04:00
       nextRun = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 4, 0, 0, 0);
     }
-  
+    // comment out after testing
+
     // Calculate the time until the next run
     var timeUntilNextRun = nextRun - now;
   
     // Set a timeout to run the function at the scheduled time
     setTimeout(function () {
-      fgs_update(hours);
+      fgs_update();
   
       // Schedule the function to run again at the next interval
       scheduleFunction();

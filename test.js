@@ -1,5 +1,6 @@
 const kent_update = require("./automated_updates/kent_update"); // trigger an Axiom email update for Kent
 const kent_pondWater = require("./automated_updates/kent_pondWater"); // trigger an Axiom email update for Kent
+const fgs_update = require("./automated_updates/fgs_update");
 
 console.log(
     `
@@ -38,5 +39,8 @@ console.log("testing...");
 
 
     (async () => {
-        await kent_update();
+        var now = new Date();
+        var hours = now.getHours();
+        console.log("hours", hours)
+        await fgs_update(12);
     })();
