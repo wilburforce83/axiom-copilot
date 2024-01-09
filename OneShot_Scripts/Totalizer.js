@@ -57,7 +57,7 @@ let userTokenBody = {
 
     });
 
-    console.log("response; ",tot,"m3", "Between "+startDate+" and "+endDate);
+    console.log("response; TAG: ",tagRef,tot,"m3", "Between "+startDate+" and "+endDate);
 
   };
 
