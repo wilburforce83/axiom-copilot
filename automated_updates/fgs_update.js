@@ -241,6 +241,9 @@ const fgs_update = async () => {
                 if (hours == 15) {
                     let sum = ((parseInt(BagAvg) * hoursLeft)*sumMultiplier).toFixed(1); // 1500 update
                     estimate = "*Estimated required out at 0600hrs; " + sum + "m3*";
+                    if (sum < 20){
+                        sum = 60;
+                    }
                     log("1500 Estimate was triggered time sent was "+hours+" output : "+estimate,logfile)
                 }
 
