@@ -1,9 +1,9 @@
 require("dotenv").config({ path: "./process.env"});
 const canary = require("canarylabs-web-api");
 
-const tagRef = "GREENCREATE.Wijster.BUU.Collective.Biogas_to_BUU";
-const startDates = ["08-01-2023", "09-01-2023", "10-01-2023", "11-01-2023"]; // List of required dates here
-const endDates = ["09-01-2023", "10-01-2023","11-01-2023","12-01-2023"]; // List of required dates here
+const tagRef = "GREENCREATE.Wijster.GasTreatment.FT-73-0001";  // CHPS = GREENCREATE.Wijster.GasTreatment.FT-73-0001 ||| Flare = GREENCREATE.Wijster.Flare.FT-65-0001_PV
+const startDates = ["10-01-2023", "11-01-2023", "12-01-2023"]; // List of required dates here
+const endDates = ["11-01-2023","12-01-2023", "01-01-2024"]; // List of required dates here
 const intervalTime = "10 seconds";
 
 const credentials = {
