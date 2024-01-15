@@ -164,6 +164,37 @@ function filterArrayByString(array, searchString) {
 
 
 
+function createTable(data) {
+  // Extract unique Ref and Period values
+  const uniqueRefs = [...new Set(data.map(item => item.Ref))];
+  const uniquePeriods = [...new Set(data.map(item => item.Period))];
+
+  // Create the table header
+  let tableHTML = '<table><tr><th>Period</th>';
+  uniqueRefs.forEach(ref => {
+    tableHTML += `<th>${ref}</th>`;
+  });
+  tableHTML += '</tr>';
+
+  // Populate the table body
+  uniquePeriods.forEach(period => {
+    tableHTML += `<tr><td>${period}</td>`;
+    uniqueRefs.forEach(ref => {
+      const matchingItem = data.find(item => item.Ref === ref && item.Period === period);
+      const total = matchingItem ? matchingItem.Total : 0;
+      tableHTML += `<td>${total}</td>`;
+    });
+    tableHTML += '</tr>';
+  });
+
+  tableHTML += '</table>';
+
+  // Append the table to the body
+  return tableHTML;
+}
+
+
+
 // Export the functions as properties of an object
 module.exports = {
   extractValues,
@@ -176,6 +207,7 @@ module.exports = {
   analyzeTrend,
   calculateTimeAboveThreshold,
   filterArrayByString,
+  createTable,
 
   // Add other functions here
 };

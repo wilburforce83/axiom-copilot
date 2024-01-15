@@ -1,9 +1,11 @@
-require("dotenv").config({ path: "./process.env"});
+require("dotenv").config({ path: "./process.env" });
 const canary = require("canarylabs-web-api");
-
-const tagRef = "GREENCREATE.Wijster.GasTreatment.FT-73-0001";  // CHPS = GREENCREATE.Wijster.GasTreatment.FT-73-0001 ||| Flare = GREENCREATE.Wijster.Flare.FT-65-0001_PV
-const startDates = ["10-01-2023", "11-01-2023", "12-01-2023"]; // List of required dates here
-const endDates = ["11-01-2023","12-01-2023", "01-01-2024"]; // List of required dates here
+const email = require("../mailer"); // email.send(message, recipient, subject) all strings.
+const helper = require("../tools/helpers");
+const tagRefs = ["GREENCREATE.Wijster.Flare.FT-65-0001_PV", "GREENCREATE.Wijster.GasTreatment.Tot_Gas_From_ADs", "GREENCREATE.Wijster.GasTreatment.FT-73-0001", "GREENCREATE.Wijster.BUU.Collective.Biogas_to_BUU", "GREENCREATE.Wijster.BUU.Collective.Biomethane_to_Grid"];  // Total = GREENCREATE.Wijster.GasTreatment.Tot_Gas_From_ADs ||| CHPS = GREENCREATE.Wijster.GasTreatment.FT-73-0001 ||| Flare = GREENCREATE.Wijster.Flare.FT-65-0001_PV  ||| Biogas to BUU = GREENCREATE.Wijster.BUU.Collective.Biogas_to_BUU   ||| Biomethane to grid = GREENCREATE.Wijster.BUU.Collective.Biomethane_to_Grid
+const friendlyNames = ["Flare", "Biogas", "CHPs", "BUU", "Grid"] // table names for each tag
+const startDates = ["11-01-2023", "12-01-2023", "01-01-2024"]; // List of required dates here
+const endDates = ["12-01-2023", "01-01-2024", "02-01-2024 06:00:00"]; // List of required dates here
 const intervalTime = "10 seconds";
 
 const credentials = {
@@ -31,24 +33,59 @@ let userTokenBody = {
       if (liveDataResult) {
         console.log("Authorisation returned okay. Processing totals, this may take a while...");
         let resultArray = [];
-        for (let i = 0; i < startDates.length; i++) {
-          let startDate = startDates[i];
-          let endDate = endDates[i];
-console.log("Processing "+startDate+". This make take a while")
-          let tot = await canary.softTotalizer(credentials, {
-            userToken: "{{UserToken}}",
-            tags: [tagRef],
-            startTime: startDate,
-            endTime: endDate,
-            maxSize: 10000000,
-            aggregateName: "TimeAverage2",
-            aggregateInterval: intervalTime
-          });
 
-          resultArray.push(`Response; TAG: ${tagRef}, ${tot} m3, Between ${startDate} and ${endDate}`);
+        const totalItems = tagRefs.length * startDates.length;
+        const progressBarLength = 50;
+        const progressStep = totalItems / progressBarLength;
+        let progress = 0;
+
+        for (let i = 0; i < tagRefs.length; i++) {
+          let tagRef = tagRefs[i];
+          for (let i = 0; i < startDates.length; i++) {
+            let startDate = startDates[i];
+            let endDate = endDates[i];
+            let name = friendlyNames[i];
+            // console.log(`Processing ${startDate} for ${tagRef} . This may take a while...`)
+            let tot = await canary.softTotalizer(credentials, {
+              userToken: "{{UserToken}}",
+              tags: [tagRef],
+              startTime: startDate,
+              endTime: endDate,
+              maxSize: 10000000,
+              aggregateName: "TimeAverage2",
+              aggregateInterval: intervalTime
+            });
+
+            let result = {
+              Ref: tagRef,
+              Name: name,
+              Total: tot,
+              Period: `${startDate} to ${endDate}`,
+              Accuracy: intervalTime
+            };
+
+            resultArray.push(result);
+            // Update progress bar
+            progress++;
+            if (progress % progressStep === 0) {
+              const barLength = Math.floor(progress / totalItems * progressBarLength);
+              const progressBar = '[' + '='.repeat(barLength) + '>'.repeat(1) + ' '.repeat(progressBarLength - barLength - 1) + ']';
+              process.stdout.clearLine();
+              process.stdout.cursorTo(0);
+              process.stdout.write(`Progress: ${Math.floor(progress / totalItems * 100)}% ${progressBar}`);
+            }
+          }
+        };
+        process.stdout.write('\n');
+        // Log all results after the for loop
+        resultArray.forEach(resultLine => console.log(resultLine));
+        let table = helper.createTable(resultArray);
+
+        try {
+          email.send(table, "will@green-create.com", "Wijster Totaliser"); // greencreatedata@outlook.com
+        } catch (error) {
+          console.log(error);
         }
-         // Log all results after the for loop
-         resultArray.forEach(resultLine => console.log(resultLine));
 
       } else {
         console.log("Error in getLiveDataToken. Cannot proceed to processing totals.");
