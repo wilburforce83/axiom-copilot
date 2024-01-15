@@ -67,7 +67,7 @@ function calculateArrAverage(arr) {
 
 function returnStatus(value, threshold) {
   // e.g. pump flow rate value, and threshold to be classed as running i.e. 30, 5 - will return yes.
- // console.log("args", value, threshold);
+  // console.log("args", value, threshold);
   if (value > threshold) {
     return "yes";
   } else {
@@ -166,22 +166,42 @@ function filterArrayByString(array, searchString) {
 
 function createTable(data) {
   // Extract unique Ref and Period values
-  const uniqueRefs = [...new Set(data.map(item => item.Ref))];
+  const uniqueRefs = [...new Set(data.map(item => item.Name))];
   const uniquePeriods = [...new Set(data.map(item => item.Period))];
+  const css = `table {
+    border-collapse: collapse;
+    background-color: #F8F8FF;
+    overflow: hidden;
+    width: 500px;
+    border-radius: 10px;
+}
 
+th,
+td {
+    font-family: 'Montserrat', sans-serif;
+    text-align: left;
+    font-size: 12px;
+    padding: 10px;
+}
+
+th {
+    background-color: #00BF7F;
+    color: white;
+}
+`;
   // Create the table header
-  let tableHTML = '<table><tr><th>Period</th>';
-  uniqueRefs.forEach(ref => {
-    tableHTML += `<th>${ref}</th>`;
+  let tableHTML = `<style>${css}</style><table><tr><th>Period</th>`;
+  uniqueRefs.forEach(name => {
+    tableHTML += `<th>${name}</th>`;
   });
   tableHTML += '</tr>';
 
   // Populate the table body
   uniquePeriods.forEach(period => {
     tableHTML += `<tr><td>${period}</td>`;
-    uniqueRefs.forEach(ref => {
-      const matchingItem = data.find(item => item.Ref === ref && item.Period === period);
-      const total = matchingItem ? matchingItem.Total : 0;
+    uniqueRefs.forEach(name => {
+      const matchingItem = data.find(item => item.Name === name && item.Period === period);
+      const total = matchingItem ? matchingItem.Total.toLocaleString() : 0;
       tableHTML += `<td>${total}</td>`;
     });
     tableHTML += '</tr>';

@@ -2,10 +2,10 @@ require("dotenv").config({ path: "./process.env" });
 const canary = require("canarylabs-web-api");
 const email = require("../mailer"); // email.send(message, recipient, subject) all strings.
 const helper = require("../tools/helpers");
-const tagRefs = ["GREENCREATE.Wijster.Flare.FT-65-0001_PV", "GREENCREATE.Wijster.GasTreatment.Tot_Gas_From_ADs", "GREENCREATE.Wijster.GasTreatment.FT-73-0001", "GREENCREATE.Wijster.BUU.Collective.Biogas_to_BUU", "GREENCREATE.Wijster.BUU.Collective.Biomethane_to_Grid"];  // Total = GREENCREATE.Wijster.GasTreatment.Tot_Gas_From_ADs ||| CHPS = GREENCREATE.Wijster.GasTreatment.FT-73-0001 ||| Flare = GREENCREATE.Wijster.Flare.FT-65-0001_PV  ||| Biogas to BUU = GREENCREATE.Wijster.BUU.Collective.Biogas_to_BUU   ||| Biomethane to grid = GREENCREATE.Wijster.BUU.Collective.Biomethane_to_Grid
-const friendlyNames = ["Flare", "Biogas", "CHPs", "BUU", "Grid"] // table names for each tag
-const startDates = ["11-01-2023", "12-01-2023", "01-01-2024"]; // List of required dates here
-const endDates = ["12-01-2023", "01-01-2024", "02-01-2024 06:00:00"]; // List of required dates here
+const tagRefs = ["GREENCREATE.Wijster.GasTreatment.Tot_Gas_From_ADs", "GREENCREATE.Wijster.GasTreatment.FT-73-0001", "GREENCREATE.Wijster.Flare.FT-65-0001_PV" ,"GREENCREATE.Wijster.BUU.Collective.Biogas_to_BUU","GREENCREATE.Wijster.BUU.Collective.Biomethane_to_Grid"];  // Total = GREENCREATE.Wijster.GasTreatment.Tot_Gas_From_ADs ||| CHPS = GREENCREATE.Wijster.GasTreatment.FT-73-0001 ||| Flare = GREENCREATE.Wijster.Flare.FT-65-0001_PV  ||| Biogas to BUU = GREENCREATE.Wijster.BUU.Collective.Biogas_to_BUU   ||| Biomethane to grid = GREENCREATE.Wijster.BUU.Collective.Biomethane_to_Grid
+const friendlyNames = ["Biogas (m3)", "CHPs (m3)", "Flare (m3)", "BUU (m3)","Grid (m3)"] // table names for each tag
+const startDates = ["08-01-2023","09-01-2023","10-01-2023","11-01-2023", "12-01-2023", "01-01-2024"]; // List of required dates here
+const endDates = ["09-01-2023","10-01-2023","11-01-2023","12-01-2023", "01-01-2024", "02-01-2024 06:00:00"]; // List of required dates here
 const intervalTime = "10 seconds";
 
 const credentials = {
@@ -41,10 +41,11 @@ let userTokenBody = {
 
         for (let i = 0; i < tagRefs.length; i++) {
           let tagRef = tagRefs[i];
+          let name = friendlyNames[i];
           for (let i = 0; i < startDates.length; i++) {
             let startDate = startDates[i];
             let endDate = endDates[i];
-            let name = friendlyNames[i];
+
             // console.log(`Processing ${startDate} for ${tagRef} . This may take a while...`)
             let tot = await canary.softTotalizer(credentials, {
               userToken: "{{UserToken}}",
@@ -67,13 +68,14 @@ let userTokenBody = {
             resultArray.push(result);
             // Update progress bar
             progress++;
-            if (progress % progressStep === 0) {
-              const barLength = Math.floor(progress / totalItems * progressBarLength);
-              const progressBar = '[' + '='.repeat(barLength) + '>'.repeat(1) + ' '.repeat(progressBarLength - barLength - 1) + ']';
-              process.stdout.clearLine();
-              process.stdout.cursorTo(0);
-              process.stdout.write(`Progress: ${Math.floor(progress / totalItems * 100)}% ${progressBar}`);
-            }
+            const percentage = Math.floor(progress / totalItems * 100);
+
+            const barLength = Math.min((progressBarLength - 1), Math.floor(percentage / 100 * (progressBarLength - 1)));
+            const progressBar = '[' + '='.repeat(barLength) + '>'.repeat(1) + ' '.repeat(progressBarLength - barLength - 1) + ']';
+            process.stdout.clearLine();
+            process.stdout.cursorTo(0);
+            process.stdout.write(`Progress: ${percentage}% ${progressBar}`);
+
           }
         };
         process.stdout.write('\n');
