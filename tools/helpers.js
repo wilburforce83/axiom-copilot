@@ -214,6 +214,51 @@ th {
 }
 
 
+function generateDateObject(period, dwm) {
+  const currentDate = new Date();
+  const resultObject = {
+    startDates: [],
+    endDates: []
+  };
+
+  for (let i = 0; i < period; i++) {
+    let newStartDate = new Date(currentDate);
+    let newEndDate = new Date(currentDate);
+
+    if (dwm === 'day') {
+      newStartDate.setDate(currentDate.getDate() - i -1);
+      newEndDate.setDate(currentDate.getDate() - i );
+    } else if (dwm === 'week') {
+      // Set newEndDate to the closest previous Sunday
+      newEndDate.setDate(currentDate.getDate() - currentDate.getDay() - 1);
+
+      // Adjust newEndDate for each iteration
+      newEndDate.setDate(newEndDate.getDate() - i * 7+1);
+
+      // Set newStartDate to the Monday before newEndDate, ensuring it doesn't go below the minimum valid date
+      newStartDate.setDate(Math.max(1, newEndDate.getDate() - 6));
+    } else if (dwm === 'month') {
+      newStartDate.setMonth(currentDate.getMonth() - i -1);
+      newEndDate.setMonth(currentDate.getMonth() - i );
+
+      // Adjust for the first day of the previous month for endDates
+      newEndDate.setDate(1);
+      newStartDate.setDate(1);
+    } else {
+      throw new Error('Invalid value for "dwm". Use "day", "week", or "month".');
+    }
+
+    const formattedStartDate = `${(newStartDate.getMonth() + 1).toString().padStart(2, '0')}-${newStartDate.getDate().toString().padStart(2, '0')}-${newStartDate.getFullYear()}`;
+    const formattedEndDate = `${(newEndDate.getMonth() + 1).toString().padStart(2, '0')}-${newEndDate.getDate().toString().padStart(2, '0')}-${newEndDate.getFullYear()}`;
+
+    resultObject.startDates.push(formattedStartDate);
+    resultObject.endDates.push(formattedEndDate);
+  }
+
+  return resultObject;
+}
+
+
 
 // Export the functions as properties of an object
 module.exports = {
@@ -228,6 +273,7 @@ module.exports = {
   calculateTimeAboveThreshold,
   filterArrayByString,
   createTable,
+  generateDateObject,
 
   // Add other functions here
 };

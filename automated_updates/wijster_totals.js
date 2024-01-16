@@ -4,9 +4,8 @@ const email = require("../mailer"); // email.send(message, recipient, subject) a
 const helper = require("../tools/helpers");
 const tagRefs = ["GREENCREATE.Wijster.GasTreatment.Tot_Gas_From_ADs", "GREENCREATE.Wijster.GasTreatment.FT-73-0001", "GREENCREATE.Wijster.Flare.FT-65-0001_PV" ,"GREENCREATE.Wijster.BUU.Collective.Biogas_to_BUU","GREENCREATE.Wijster.BUU.Collective.Biomethane_to_Grid"];  // Total = GREENCREATE.Wijster.GasTreatment.Tot_Gas_From_ADs ||| CHPS = GREENCREATE.Wijster.GasTreatment.FT-73-0001 ||| Flare = GREENCREATE.Wijster.Flare.FT-65-0001_PV  ||| Biogas to BUU = GREENCREATE.Wijster.BUU.Collective.Biogas_to_BUU   ||| Biomethane to grid = GREENCREATE.Wijster.BUU.Collective.Biomethane_to_Grid
 const friendlyNames = ["Biogas (m3)", "CHPs (m3)", "Flare (m3)", "BUU (m3)","Grid (m3)"] // table names for each tag
-const dates = helper.generateDateObject(6, 'week')
-const startDates = dates.startDates;
-const endDates = dates.endDates;
+// const startDates = ["08-01-2023","09-01-2023","10-01-2023","11-01-2023", "12-01-2023", "01-01-2024"]; // List of required dates here
+// const endDates = ["09-01-2023","10-01-2023","11-01-2023","12-01-2023", "01-01-2024", "02-01-2024 06:00:00"]; // List of required dates here
 const intervalTime = "10 seconds";
 
 const credentials = {
@@ -22,7 +21,7 @@ let userTokenBody = {
   timezone: "Eastern Standard Time",
 };
 
-(async () => {
+const wijster_totalisers = async (startDates, endDates) => { // both arrays as per commented out const above
   try {
     let result = await canary.getUserToken(credentials, userTokenBody);
 
@@ -99,4 +98,7 @@ let userTokenBody = {
   } catch (error) {
     console.error("Error:", error);
   }
-})();
+};
+
+
+module.exports = wijster_totalisers;
