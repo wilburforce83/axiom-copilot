@@ -5,8 +5,8 @@
     "inquirer": "^9.2.12",
     "nodemailer": "^6.9.7"
   },
-  "main": "cli.js",
+  "main": "app.js",
   "scripts": {
-    "start": "node cli.js"
+    "start": "node app.js"
   }
 }
