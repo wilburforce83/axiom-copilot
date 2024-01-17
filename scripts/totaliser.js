@@ -1,6 +1,6 @@
 require("dotenv").config({ path: "./process.env" });
 const canary = require("canarylabs-web-api");
-const email = require("../mailer"); // email.send(message, recipient, subject) all strings.
+const email = require("../tools/mailer"); // email.send(message, recipient, subject) all strings.
 const helper = require("../tools/helpers");
 const tagRefs = ["GREENCREATE.Wijster.GasTreatment.Tot_Gas_From_ADs", "GREENCREATE.Wijster.GasTreatment.FT-73-0001", "GREENCREATE.Wijster.Flare.FT-65-0001_PV" ,"GREENCREATE.Wijster.BUU.Collective.Biogas_to_BUU","GREENCREATE.Wijster.BUU.Collective.Biomethane_to_Grid"];  // Total = GREENCREATE.Wijster.GasTreatment.Tot_Gas_From_ADs ||| CHPS = GREENCREATE.Wijster.GasTreatment.FT-73-0001 ||| Flare = GREENCREATE.Wijster.Flare.FT-65-0001_PV  ||| Biogas to BUU = GREENCREATE.Wijster.BUU.Collective.Biogas_to_BUU   ||| Biomethane to grid = GREENCREATE.Wijster.BUU.Collective.Biomethane_to_Grid
 const friendlyNames = ["Biogas (m3)", "CHPs (m3)", "Flare (m3)", "BUU (m3)","Grid (m3)"] // table names for each tag
