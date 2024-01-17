@@ -1,9 +1,6 @@
 const wijster_totals = require("./scripts/totaliser")
 const helper = require("./tools/helpers");
 
-
-
-
 console.log(
     `
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -36,7 +33,7 @@ Author Will Shearer 2023 - Green Create, GC CoPilot AI v1.0
 `);
 
 async function run() {
-    const { default: inquirer } = await import('inquirer');
+    const inquirer = require('inquirer');
 
     const periodQuestion = {
         type: 'list',
