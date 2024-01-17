@@ -1,4 +1,4 @@
-const wijster_totals = require("./automated_updates/wijster_totals")
+const wijster_totals = require("./scripts/totaliser")
 const helper = require("./tools/helpers");
 
 
