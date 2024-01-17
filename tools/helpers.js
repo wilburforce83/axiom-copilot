@@ -225,10 +225,10 @@ function generateDateObject(period, dwm) {
     let newStartDate = new Date(currentDate);
     let newEndDate = new Date(currentDate);
 
-    if (dwm === 'day') {
+    if (dwm === 'Day') {
       newStartDate.setDate(currentDate.getDate() - i -1);
       newEndDate.setDate(currentDate.getDate() - i );
-    } else if (dwm === 'week') {
+    } else if (dwm === 'Week') {
       // Set newEndDate to the closest previous Sunday
       newEndDate.setDate(currentDate.getDate() - currentDate.getDay() - 1);
 
@@ -237,7 +237,7 @@ function generateDateObject(period, dwm) {
 
       // Set newStartDate to the Monday before newEndDate, ensuring it doesn't go below the minimum valid date
       newStartDate.setDate(Math.max(1, newEndDate.getDate() - 6));
-    } else if (dwm === 'month') {
+    } else if (dwm === 'Month') {
       newStartDate.setMonth(currentDate.getMonth() - i -1);
       newEndDate.setMonth(currentDate.getMonth() - i );
 
@@ -245,7 +245,7 @@ function generateDateObject(period, dwm) {
       newEndDate.setDate(1);
       newStartDate.setDate(1);
     } else {
-      throw new Error('Invalid value for "dwm". Use "day", "week", or "month".');
+      throw new Error('Invalid value for "dwm". Use "Day", "Week", or "Month".');
     }
 
     const formattedStartDate = `${(newStartDate.getMonth() + 1).toString().padStart(2, '0')}-${newStartDate.getDate().toString().padStart(2, '0')}-${newStartDate.getFullYear()}`;

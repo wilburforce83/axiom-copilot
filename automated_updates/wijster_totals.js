@@ -21,7 +21,7 @@ let userTokenBody = {
   timezone: "Eastern Standard Time",
 };
 
-const wijster_totalisers = async (startDates, endDates) => { // both arrays as per commented out const above
+const wijster_totalisers = async (startDates, endDates, emailAddress) => { // both arrays as per commented out const above
   try {
     let result = await canary.getUserToken(credentials, userTokenBody);
 
@@ -80,11 +80,12 @@ const wijster_totalisers = async (startDates, endDates) => { // both arrays as p
         };
         process.stdout.write('\n');
         // Log all results after the for loop
-        resultArray.forEach(resultLine => console.log(resultLine));
+       // resultArray.forEach(resultLine => console.log(resultLine));
+       
         let table = helper.createTable(resultArray);
 
         try {
-          email.send(table, "will@green-create.com", "Wijster Totaliser"); // greencreatedata@outlook.com
+          email.send(table, emailAddress, "GC CoPilot Export"); // greencreatedata@outlook.com
         } catch (error) {
           console.log(error);
         }
