@@ -1,5 +1,5 @@
 // helper.js
-
+const cliTable = require('cli-table');
 // Function to extract "v" values from the data array
 function extractValues(data) {
   // Check if the input data is an array
@@ -259,6 +259,46 @@ function generateDateObject(period, dwm) {
 }
 
 
+function filterTargetArray(resultArr, sourceArr, targetArr) {
+  const resultIndexes = resultArr.map(item => sourceArr.indexOf(item));
+  
+  const filteredTargetArr = resultIndexes
+    .filter(index => index !== -1) // Filter out elements not found in sourceArr
+    .map(index => targetArr[index]);
+
+  return filteredTargetArr;
+}
+
+function createCliTable(data) {
+  // Extract unique Ref and Period values
+  const uniqueRefs = [...new Set(data.map(item => item.Name))];
+  const uniquePeriods = [...new Set(data.map(item => item.Period))];
+
+  // Create the table with header
+  const table = new cliTable({
+    head: ['Period', ...uniqueRefs],
+  });
+
+  // Populate the table body
+  uniquePeriods.forEach(period => {
+    const rowData = [period];
+
+    uniqueRefs.forEach(name => {
+      const matchingItem = data.find(item => item.Name === name && item.Period === period);
+      const total = matchingItem ? matchingItem.Total.toLocaleString() : 0;
+      rowData.push(total);
+    });
+
+    // Push the row to the table
+    table.push(rowData);
+  });
+
+  // Display the table in the console
+  return table.toString();
+}
+
+
+
 
 // Export the functions as properties of an object
 module.exports = {
@@ -274,6 +314,8 @@ module.exports = {
   filterArrayByString,
   createTable,
   generateDateObject,
+  filterTargetArray,
+  createCliTable,
 
   // Add other functions here
 };

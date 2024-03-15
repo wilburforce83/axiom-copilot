@@ -2,8 +2,9 @@ require("dotenv").config({ path: "./process.env" });
 const canary = require("canarylabs-web-api");
 const email = require("../tools/mailer"); // email.send(message, recipient, subject) all strings.
 const helper = require("../tools/helpers");
-const tagRefs = ["GREENCREATE.Wijster.GasTreatment.Tot_Gas_From_ADs", "GREENCREATE.Wijster.GasTreatment.FT-73-0001", "GREENCREATE.Wijster.Flare.FT-65-0001_PV" ,"GREENCREATE.Wijster.BUU.Collective.Biogas_to_BUU","GREENCREATE.Wijster.BUU.Collective.Biomethane_to_Grid"];  // Total = GREENCREATE.Wijster.GasTreatment.Tot_Gas_From_ADs ||| CHPS = GREENCREATE.Wijster.GasTreatment.FT-73-0001 ||| Flare = GREENCREATE.Wijster.Flare.FT-65-0001_PV  ||| Biogas to BUU = GREENCREATE.Wijster.BUU.Collective.Biogas_to_BUU   ||| Biomethane to grid = GREENCREATE.Wijster.BUU.Collective.Biomethane_to_Grid
-const friendlyNames = ["Biogas (m3)", "CHPs (m3)", "Flare (m3)", "BUU (m3)","Grid (m3)"] // table names for each tag
+const chalk = require("chalk");
+
+
 // const startDates = ["08-01-2023","09-01-2023","10-01-2023","11-01-2023", "12-01-2023", "01-01-2024"]; // List of required dates here
 // const endDates = ["09-01-2023","10-01-2023","11-01-2023","12-01-2023", "01-01-2024", "02-01-2024 06:00:00"]; // List of required dates here
 const intervalTime = "10 seconds";
@@ -21,7 +22,7 @@ let userTokenBody = {
   timezone: "Eastern Standard Time",
 };
 
-const wijster_totalisers = async (startDates, endDates, emailAddress) => { // both arrays as per commented out const above
+const wijster_totalisers = async (startDates, endDates, emailAddress, tagRefs, friendlyNames) => { // both arrays as per commented out const above
   try {
     let result = await canary.getUserToken(credentials, userTokenBody);
 
@@ -81,8 +82,9 @@ const wijster_totalisers = async (startDates, endDates, emailAddress) => { // bo
         process.stdout.write('\n');
         // Log all results after the for loop
        // resultArray.forEach(resultLine => console.log(resultLine));
-       
+       let cliTab = helper.createCliTable(resultArray);
         let table = helper.createTable(resultArray);
+        console.log(chalk.yellow(cliTab));
 
         try {
           email.send(table, emailAddress, "GC CoPilot Export"); // greencreatedata@outlook.com

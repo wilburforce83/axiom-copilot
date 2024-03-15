@@ -4042,8 +4042,6 @@ const {
 	stringEncaseCRLFWithFirstIndex
 } = __nccwpck_require__(89091);
 
-const {isArray} = Array;
-
 // `supportsColor.level` → `ansiStyles.color[name]` mapping
 const levelMapping = [
 	'ansi',
@@ -4055,7 +4053,7 @@ const levelMapping = [
 const styles = Object.create(null);
 
 const applyOptions = (object, options = {}) => {
-	if (options.level && !(Number.isInteger(options.level) && options.level >= 0 && options.level <= 3)) {
+	if (options.level > 3 || options.level < 0) {
 		throw new Error('The `level` option should be an integer from 0 to 3');
 	}
 
@@ -4066,7 +4064,6 @@ const applyOptions = (object, options = {}) => {
 
 class ChalkClass {
 	constructor(options) {
-		// eslint-disable-next-line no-constructor-return
 		return chalkFactory(options);
 	}
 }
@@ -4173,19 +4170,14 @@ const createStyler = (open, close, parent) => {
 
 const createBuilder = (self, _styler, _isEmpty) => {
 	const builder = (...arguments_) => {
-		if (isArray(arguments_[0]) && isArray(arguments_[0].raw)) {
-			// Called as a template literal, for example: chalk.red`2 + 3 = {bold ${2+3}}`
-			return applyStyle(builder, chalkTag(builder, ...arguments_));
-		}
-
 		// Single argument is hot path, implicit coercion is faster than anything
 		// eslint-disable-next-line no-implicit-coercion
 		return applyStyle(builder, (arguments_.length === 1) ? ('' + arguments_[0]) : arguments_.join(' '));
 	};
 
-	// We alter the prototype because we must return a function, but there is
+	// `__proto__` is used because we must return a function, but there is
 	// no way to create a function with a different prototype
-	Object.setPrototypeOf(builder, proto);
+	builder.__proto__ = proto; // eslint-disable-line no-proto
 
 	builder._generator = self;
 	builder._styler = _styler;
@@ -4232,7 +4224,7 @@ let template;
 const chalkTag = (chalk, ...strings) => {
 	const [firstString] = strings;
 
-	if (!isArray(firstString) || !isArray(firstString.raw)) {
+	if (!Array.isArray(firstString)) {
 		// If chalk() was called by itself or with a string,
 		// return the string itself as a string.
 		return strings.join(' ');
@@ -4262,6 +4254,18 @@ chalk.supportsColor = stdoutColor;
 chalk.stderr = Chalk({level: stderrColor ? stderrColor.level : 0}); // eslint-disable-line new-cap
 chalk.stderr.supportsColor = stderrColor;
 
+// For TypeScript
+chalk.Level = {
+	None: 0,
+	Basic: 1,
+	Ansi256: 2,
+	TrueColor: 3,
+	0: 'None',
+	1: 'Basic',
+	2: 'Ansi256',
+	3: 'TrueColor'
+};
+
 module.exports = chalk;
 
 
@@ -4275,7 +4279,7 @@ module.exports = chalk;
 const TEMPLATE_REGEX = /(?:\\(u(?:[a-f\d]{4}|\{[a-f\d]{1,6}\})|x[a-f\d]{2}|.))|(?:\{(~)?(\w+(?:\([^)]*\))?(?:\.\w+(?:\([^)]*\))?)*)(?:[ \t]|(?=\r?\n)))|(\})|((?:.|[\r\n\f])+?)/gi;
 const STYLE_REGEX = /(?:^|\.)(\w+)(?:\(([^)]*)\))?/g;
 const STRING_REGEX = /^(['"])((?:\\.|(?!\1)[^\\])*)\1$/;
-const ESCAPE_REGEX = /\\(u(?:[a-f\d]{4}|{[a-f\d]{1,6}})|x[a-f\d]{2}|.)|([^\\])/gi;
+const ESCAPE_REGEX = /\\(u(?:[a-f\d]{4}|\{[a-f\d]{1,6}\})|x[a-f\d]{2}|.)|([^\\])/gi;
 
 const ESCAPES = new Map([
 	['n', '\n'],
@@ -4399,8 +4403,8 @@ module.exports = (chalk, temporary) => {
 	chunks.push(chunk.join(''));
 
 	if (styles.length > 0) {
-		const errMessage = `Chalk template literal is missing ${styles.length} closing bracket${styles.length === 1 ? '' : 's'} (\`}\`)`;
-		throw new Error(errMessage);
+		const errMsg = `Chalk template literal is missing ${styles.length} closing bracket${styles.length === 1 ? '' : 's'} (\`}\`)`;
+		throw new Error(errMsg);
 	}
 
 	return chunks.join('');
@@ -6452,6 +6456,402 @@ exports.toggle = (force, writableStream) => {
 
 /***/ }),
 
+/***/ 65865:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+
+/**
+ * Module dependencies.
+ */
+
+var colors = __nccwpck_require__(73895)
+  , utils = __nccwpck_require__(24605)
+  , repeat = utils.repeat
+  , truncate = utils.truncate
+  , pad = utils.pad;
+
+/**
+ * Table constructor
+ *
+ * @param {Object} options
+ * @api public
+ */
+
+function Table (options){
+  this.options = utils.options({
+      chars: {
+          'top': '─'
+        , 'top-mid': '┬'
+        , 'top-left': '┌'
+        , 'top-right': '┐'
+        , 'bottom': '─'
+        , 'bottom-mid': '┴'
+        , 'bottom-left': '└'
+        , 'bottom-right': '┘'
+        , 'left': '│'
+        , 'left-mid': '├'
+        , 'mid': '─'
+        , 'mid-mid': '┼'
+        , 'right': '│'
+        , 'right-mid': '┤'
+        , 'middle': '│'
+      }
+    , truncate: '…'
+    , colWidths: []
+    , colAligns: []
+    , style: {
+          'padding-left': 1
+        , 'padding-right': 1
+        , head: ['red']
+        , border: ['grey']
+        , compact : false
+      }
+    , head: []
+  }, options);
+};
+
+/**
+ * Inherit from Array.
+ */
+
+Table.prototype.__proto__ = Array.prototype;
+
+/**
+ * Width getter
+ *
+ * @return {Number} width
+ * @api public
+ */
+
+Table.prototype.__defineGetter__('width', function (){
+  var str = this.toString().split("\n");
+  if (str.length) return str[0].length;
+  return 0;
+});
+
+/**
+ * Render to a string.
+ *
+ * @return {String} table representation
+ * @api public
+ */
+
+Table.prototype.render
+Table.prototype.toString = function (){
+  var ret = ''
+    , options = this.options
+    , style = options.style
+    , head = options.head
+    , chars = options.chars
+    , truncater = options.truncate
+      , colWidths = options.colWidths || new Array(this.head.length)
+      , totalWidth = 0;
+
+    if (!head.length && !this.length) return '';
+
+    if (!colWidths.length){
+      var all_rows = this.slice(0);
+      if (head.length) { all_rows = all_rows.concat([head]) };
+
+      all_rows.forEach(function(cells){
+        // horizontal (arrays)
+        if (typeof cells === 'object' && cells.length) {
+          extractColumnWidths(cells);
+
+        // vertical (objects)
+        } else {
+          var header_cell = Object.keys(cells)[0]
+            , value_cell = cells[header_cell];
+
+          colWidths[0] = Math.max(colWidths[0] || 0, get_width(header_cell) || 0);
+
+          // cross (objects w/ array values)
+          if (typeof value_cell === 'object' && value_cell.length) {
+            extractColumnWidths(value_cell, 1);
+          } else {
+            colWidths[1] = Math.max(colWidths[1] || 0, get_width(value_cell) || 0);
+          }
+        }
+    });
+  };
+
+  totalWidth = (colWidths.length == 1 ? colWidths[0] : colWidths.reduce(
+    function (a, b){
+      return a + b
+    })) + colWidths.length + 1;
+
+  function extractColumnWidths(arr, offset) {
+    var offset = offset || 0;
+    arr.forEach(function(cell, i){
+      colWidths[i + offset] = Math.max(colWidths[i + offset] || 0, get_width(cell) || 0);
+    });
+  };
+
+  function get_width(obj) {
+    return typeof obj == 'object' && obj.width != undefined
+         ? obj.width
+         : ((typeof obj == 'object' ? utils.strlen(obj.text) : utils.strlen(obj)) + (style['padding-left'] || 0) + (style['padding-right'] || 0))
+  }
+
+  // draws a line
+  function line (line, left, right, intersection){
+    var width = 0
+      , line =
+          left
+        + repeat(line, totalWidth - 2)
+        + right;
+
+    colWidths.forEach(function (w, i){
+      if (i == colWidths.length - 1) return;
+      width += w + 1;
+      line = line.substr(0, width) + intersection + line.substr(width + 1);
+    });
+
+    return applyStyles(options.style.border, line);
+  };
+
+  // draws the top line
+  function lineTop (){
+    var l = line(chars.top
+               , chars['top-left'] || chars.top
+               , chars['top-right'] ||  chars.top
+               , chars['top-mid']);
+    if (l)
+      ret += l + "\n";
+  };
+
+  function generateRow (items, style) {
+    var cells = []
+      , max_height = 0;
+
+    // prepare vertical and cross table data
+    if (!Array.isArray(items) && typeof items === "object") {
+      var key = Object.keys(items)[0]
+        , value = items[key]
+        , first_cell_head = true;
+
+      if (Array.isArray(value)) {
+        items = value;
+        items.unshift(key);
+      } else {
+        items = [key, value];
+      }
+    }
+
+    // transform array of item strings into structure of cells
+    items.forEach(function (item, i) {
+      var contents = item.toString().split("\n").reduce(function (memo, l) {
+        memo.push(string(l, i));
+        return memo;
+      }, [])
+
+      var height = contents.length;
+      if (height > max_height) { max_height = height };
+
+      cells.push({ contents: contents , height: height });
+    });
+
+    // transform vertical cells into horizontal lines
+    var lines = new Array(max_height);
+    cells.forEach(function (cell, i) {
+      cell.contents.forEach(function (line, j) {
+        if (!lines[j]) { lines[j] = [] };
+        if (style || (first_cell_head && i === 0 && options.style.head)) {
+          line = applyStyles(options.style.head, line)
+        }
+
+        lines[j].push(line);
+      });
+
+      // populate empty lines in cell
+      for (var j = cell.height, l = max_height; j < l; j++) {
+        if (!lines[j]) { lines[j] = [] };
+        lines[j].push(string('', i));
+      }
+    });
+    var ret = "";
+    lines.forEach(function (line, index) {
+      if (ret.length > 0) {
+        ret += "\n" + applyStyles(options.style.border, chars.left);
+      }
+
+      ret += line.join(applyStyles(options.style.border, chars.middle)) + applyStyles(options.style.border, chars.right);
+    });
+
+    return applyStyles(options.style.border, chars.left) + ret;
+  };
+
+  function applyStyles(styles, subject) {
+    if (!subject)
+      return '';
+    styles.forEach(function(style) {
+      subject = colors[style](subject);
+    });
+    return subject;
+  };
+
+  // renders a string, by padding it or truncating it
+  function string (str, index){
+    var str = String(typeof str == 'object' && str.text ? str.text : str)
+      , length = utils.strlen(str)
+      , width = colWidths[index]
+          - (style['padding-left'] || 0)
+          - (style['padding-right'] || 0)
+      , align = options.colAligns[index] || 'left';
+
+    return repeat(' ', style['padding-left'] || 0)
+         + (length == width ? str :
+             (length < width
+              ? pad(str, ( width + (str.length - length) ), ' ', align == 'left' ? 'right' :
+                  (align == 'middle' ? 'both' : 'left'))
+              : (truncater ? truncate(str, width, truncater) : str))
+           )
+         + repeat(' ', style['padding-right'] || 0);
+  };
+
+  if (head.length){
+    lineTop();
+
+    ret += generateRow(head, style.head) + "\n"
+  }
+
+  if (this.length)
+    this.forEach(function (cells, i){
+      if (!head.length && i == 0)
+        lineTop();
+      else {
+        if (!style.compact || i<(!!head.length) ?1: false || cells.length == 0){
+          var l = line(chars.mid
+                     , chars['left-mid']
+                     , chars['right-mid']
+                     , chars['mid-mid']);
+          if (l)
+            ret += l + "\n"
+        }
+      }
+
+      if (cells.hasOwnProperty("length") && !cells.length) {
+        return
+      } else {
+        ret += generateRow(cells) + "\n";
+      };
+    });
+
+  var l = line(chars.bottom
+             , chars['bottom-left'] || chars.bottom
+             , chars['bottom-right'] || chars.bottom
+             , chars['bottom-mid']);
+  if (l)
+    ret += l;
+  else
+    // trim the last '\n' if we didn't add the bottom decoration
+    ret = ret.slice(0, -1);
+
+  return ret;
+};
+
+/**
+ * Module exports.
+ */
+
+module.exports = Table;
+
+module.exports.version = '0.0.1';
+
+
+/***/ }),
+
+/***/ 24605:
+/***/ ((__unused_webpack_module, exports) => {
+
+
+/**
+ * Repeats a string.
+ *
+ * @param {String} char(s)
+ * @param {Number} number of times
+ * @return {String} repeated string
+ */
+
+exports.repeat = function (str, times){
+  return Array(times + 1).join(str);
+};
+
+/**
+ * Pads a string
+ *
+ * @api public
+ */
+
+exports.pad = function (str, len, pad, dir) {
+  if (len + 1 >= str.length)
+    switch (dir){
+      case 'left':
+        str = Array(len + 1 - str.length).join(pad) + str;
+        break;
+
+      case 'both':
+        var right = Math.ceil((padlen = len - str.length) / 2);
+        var left = padlen - right;
+        str = Array(left + 1).join(pad) + str + Array(right + 1).join(pad);
+        break;
+
+      default:
+        str = str + Array(len + 1 - str.length).join(pad);
+    };
+
+  return str;
+};
+
+/**
+ * Truncates a string
+ *
+ * @api public
+ */
+
+exports.truncate = function (str, length, chr){
+  chr = chr || '…';
+  return str.length >= length ? str.substr(0, length - chr.length) + chr : str;
+};
+
+/**
+ * Copies and merges options with defaults.
+ *
+ * @param {Object} defaults
+ * @param {Object} supplied options
+ * @return {Object} new (merged) object
+ */
+
+function options(defaults, opts) {
+  for (var p in opts) {
+    if (opts[p] && opts[p].constructor && opts[p].constructor === Object) {
+      defaults[p] = defaults[p] || {};
+      options(defaults[p], opts[p]);
+    } else {
+      defaults[p] = opts[p];
+    }
+  }
+  return defaults;
+};
+exports.options = options;
+
+//
+// For consideration of terminal "color" programs like colors.js,
+// which can add ANSI escape color codes to strings,
+// we destyle the ANSI color escape codes for padding calculations.
+//
+// see: http://en.wikipedia.org/wiki/ANSI_escape_code
+//
+exports.strlen = function(str){
+  var code = /\u001b\[(?:\d*;){0,5}\d*m/g;
+  var stripped = ("" + str).replace(code,'');
+  var split = stripped.split("\n");
+  return split.reduce(function (memo, s) { return (s.length > memo) ? s.length : memo }, 0);
+}
+
+
+/***/ }),
+
 /***/ 32263:
 /***/ ((module, exports, __nccwpck_require__) => {
 
@@ -7704,6 +8104,579 @@ module.exports = {
 	"yellowgreen": [154, 205, 50]
 };
 
+
+/***/ }),
+
+/***/ 81:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+/*
+
+The MIT License (MIT)
+
+Original Library 
+  - Copyright (c) Marak Squires
+
+Additional functionality
+ - Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+*/
+
+var colors = {};
+module['exports'] = colors;
+
+colors.themes = {};
+
+var ansiStyles = colors.styles = __nccwpck_require__(31474);
+var defineProps = Object.defineProperties;
+
+colors.supportsColor = __nccwpck_require__(8422);
+
+if (typeof colors.enabled === "undefined") {
+  colors.enabled = colors.supportsColor;
+}
+
+colors.stripColors = colors.strip = function(str){
+  return ("" + str).replace(/\x1B\[\d+m/g, '');
+};
+
+
+var stylize = colors.stylize = function stylize (str, style) {
+  return ansiStyles[style].open + str + ansiStyles[style].close;
+}
+
+var matchOperatorsRe = /[|\\{}()[\]^$+*?.]/g;
+var escapeStringRegexp = function (str) {
+  if (typeof str !== 'string') {
+    throw new TypeError('Expected a string');
+  }
+  return str.replace(matchOperatorsRe,  '\\$&');
+}
+
+function build(_styles) {
+  var builder = function builder() {
+    return applyStyle.apply(builder, arguments);
+  };
+  builder._styles = _styles;
+  // __proto__ is used because we must return a function, but there is
+  // no way to create a function with a different prototype.
+  builder.__proto__ = proto;
+  return builder;
+}
+
+var styles = (function () {
+  var ret = {};
+  ansiStyles.grey = ansiStyles.gray;
+  Object.keys(ansiStyles).forEach(function (key) {
+    ansiStyles[key].closeRe = new RegExp(escapeStringRegexp(ansiStyles[key].close), 'g');
+    ret[key] = {
+      get: function () {
+        return build(this._styles.concat(key));
+      }
+    };
+  });
+  return ret;
+})();
+
+var proto = defineProps(function colors() {}, styles);
+
+function applyStyle() {
+  var args = arguments;
+  var argsLen = args.length;
+  var str = argsLen !== 0 && String(arguments[0]);
+  if (argsLen > 1) {
+    for (var a = 1; a < argsLen; a++) {
+      str += ' ' + args[a];
+    }
+  }
+
+  if (!colors.enabled || !str) {
+    return str;
+  }
+
+  var nestedStyles = this._styles;
+
+  var i = nestedStyles.length;
+  while (i--) {
+    var code = ansiStyles[nestedStyles[i]];
+    str = code.open + str.replace(code.closeRe, code.open) + code.close;
+  }
+
+  return str;
+}
+
+function applyTheme (theme) {
+  for (var style in theme) {
+    (function(style){
+      colors[style] = function(str){
+        return colors[theme[style]](str);
+      };
+    })(style)
+  }
+}
+
+colors.setTheme = function (theme) {
+  if (typeof theme === 'string') {
+    try {
+      colors.themes[theme] = require(theme);
+      applyTheme(colors.themes[theme]);
+      return colors.themes[theme];
+    } catch (err) {
+      console.log(err);
+      return err;
+    }
+  } else {
+    applyTheme(theme);
+  }
+};
+
+function init() {
+  var ret = {};
+  Object.keys(styles).forEach(function (name) {
+    ret[name] = {
+      get: function () {
+        return build([name]);
+      }
+    };
+  });
+  return ret;
+}
+
+var sequencer = function sequencer (map, str) {
+  var exploded = str.split(""), i = 0;
+  exploded = exploded.map(map);
+  return exploded.join("");
+};
+
+// custom formatter methods
+colors.trap = __nccwpck_require__(3801);
+colors.zalgo = __nccwpck_require__(44815);
+
+// maps
+colors.maps = {};
+colors.maps.america = __nccwpck_require__(40761);
+colors.maps.zebra = __nccwpck_require__(38335);
+colors.maps.rainbow = __nccwpck_require__(90321);
+colors.maps.random = __nccwpck_require__(51594)
+
+for (var map in colors.maps) {
+  (function(map){
+    colors[map] = function (str) {
+      return sequencer(colors.maps[map], str);
+    }
+  })(map)
+}
+
+defineProps(colors, init());
+
+/***/ }),
+
+/***/ 3801:
+/***/ ((module) => {
+
+module['exports'] = function runTheTrap (text, options) {
+  var result = "";
+  text = text || "Run the trap, drop the bass";
+  text = text.split('');
+  var trap = {
+    a: ["\u0040", "\u0104", "\u023a", "\u0245", "\u0394", "\u039b", "\u0414"],
+    b: ["\u00df", "\u0181", "\u0243", "\u026e", "\u03b2", "\u0e3f"],
+    c: ["\u00a9", "\u023b", "\u03fe"],
+    d: ["\u00d0", "\u018a", "\u0500" , "\u0501" ,"\u0502", "\u0503"],
+    e: ["\u00cb", "\u0115", "\u018e", "\u0258", "\u03a3", "\u03be", "\u04bc", "\u0a6c"],
+    f: ["\u04fa"],
+    g: ["\u0262"],
+    h: ["\u0126", "\u0195", "\u04a2", "\u04ba", "\u04c7", "\u050a"],
+    i: ["\u0f0f"],
+    j: ["\u0134"],
+    k: ["\u0138", "\u04a0", "\u04c3", "\u051e"],
+    l: ["\u0139"],
+    m: ["\u028d", "\u04cd", "\u04ce", "\u0520", "\u0521", "\u0d69"],
+    n: ["\u00d1", "\u014b", "\u019d", "\u0376", "\u03a0", "\u048a"],
+    o: ["\u00d8", "\u00f5", "\u00f8", "\u01fe", "\u0298", "\u047a", "\u05dd", "\u06dd", "\u0e4f"],
+    p: ["\u01f7", "\u048e"],
+    q: ["\u09cd"],
+    r: ["\u00ae", "\u01a6", "\u0210", "\u024c", "\u0280", "\u042f"],
+    s: ["\u00a7", "\u03de", "\u03df", "\u03e8"],
+    t: ["\u0141", "\u0166", "\u0373"],
+    u: ["\u01b1", "\u054d"],
+    v: ["\u05d8"],
+    w: ["\u0428", "\u0460", "\u047c", "\u0d70"],
+    x: ["\u04b2", "\u04fe", "\u04fc", "\u04fd"],
+    y: ["\u00a5", "\u04b0", "\u04cb"],
+    z: ["\u01b5", "\u0240"]
+  }
+  text.forEach(function(c){
+    c = c.toLowerCase();
+    var chars = trap[c] || [" "];
+    var rand = Math.floor(Math.random() * chars.length);
+    if (typeof trap[c] !== "undefined") {
+      result += trap[c][rand];
+    } else {
+      result += c;
+    }
+  });
+  return result;
+
+}
+
+
+/***/ }),
+
+/***/ 44815:
+/***/ ((module) => {
+
+// please no
+module['exports'] = function zalgo(text, options) {
+  text = text || "   he is here   ";
+  var soul = {
+    "up" : [
+      '̍', '̎', '̄', '̅',
+      '̿', '̑', '̆', '̐',
+      '͒', '͗', '͑', '̇',
+      '̈', '̊', '͂', '̓',
+      '̈', '͊', '͋', '͌',
+      '̃', '̂', '̌', '͐',
+      '̀', '́', '̋', '̏',
+      '̒', '̓', '̔', '̽',
+      '̉', 'ͣ', 'ͤ', 'ͥ',
+      'ͦ', 'ͧ', 'ͨ', 'ͩ',
+      'ͪ', 'ͫ', 'ͬ', 'ͭ',
+      'ͮ', 'ͯ', '̾', '͛',
+      '͆', '̚'
+    ],
+    "down" : [
+      '̖', '̗', '̘', '̙',
+      '̜', '̝', '̞', '̟',
+      '̠', '̤', '̥', '̦',
+      '̩', '̪', '̫', '̬',
+      '̭', '̮', '̯', '̰',
+      '̱', '̲', '̳', '̹',
+      '̺', '̻', '̼', 'ͅ',
+      '͇', '͈', '͉', '͍',
+      '͎', '͓', '͔', '͕',
+      '͖', '͙', '͚', '̣'
+    ],
+    "mid" : [
+      '̕', '̛', '̀', '́',
+      '͘', '̡', '̢', '̧',
+      '̨', '̴', '̵', '̶',
+      '͜', '͝', '͞',
+      '͟', '͠', '͢', '̸',
+      '̷', '͡', ' ҉'
+    ]
+  },
+  all = [].concat(soul.up, soul.down, soul.mid),
+  zalgo = {};
+
+  function randomNumber(range) {
+    var r = Math.floor(Math.random() * range);
+    return r;
+  }
+
+  function is_char(character) {
+    var bool = false;
+    all.filter(function (i) {
+      bool = (i === character);
+    });
+    return bool;
+  }
+  
+
+  function heComes(text, options) {
+    var result = '', counts, l;
+    options = options || {};
+    options["up"] = options["up"] || true;
+    options["mid"] = options["mid"] || true;
+    options["down"] = options["down"] || true;
+    options["size"] = options["size"] || "maxi";
+    text = text.split('');
+    for (l in text) {
+      if (is_char(l)) {
+        continue;
+      }
+      result = result + text[l];
+      counts = {"up" : 0, "down" : 0, "mid" : 0};
+      switch (options.size) {
+      case 'mini':
+        counts.up = randomNumber(8);
+        counts.min = randomNumber(2);
+        counts.down = randomNumber(8);
+        break;
+      case 'maxi':
+        counts.up = randomNumber(16) + 3;
+        counts.min = randomNumber(4) + 1;
+        counts.down = randomNumber(64) + 3;
+        break;
+      default:
+        counts.up = randomNumber(8) + 1;
+        counts.mid = randomNumber(6) / 2;
+        counts.down = randomNumber(8) + 1;
+        break;
+      }
+
+      var arr = ["up", "mid", "down"];
+      for (var d in arr) {
+        var index = arr[d];
+        for (var i = 0 ; i <= counts[index]; i++) {
+          if (options[index]) {
+            result = result + soul[index][randomNumber(soul[index].length)];
+          }
+        }
+      }
+    }
+    return result;
+  }
+  // don't summon him
+  return heComes(text);
+}
+
+
+/***/ }),
+
+/***/ 40761:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+var colors = __nccwpck_require__(81);
+
+module['exports'] = (function() {
+  return function (letter, i, exploded) {
+    if(letter === " ") return letter;
+    switch(i%3) {
+      case 0: return colors.red(letter);
+      case 1: return colors.white(letter)
+      case 2: return colors.blue(letter)
+    }
+  }
+})();
+
+/***/ }),
+
+/***/ 90321:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+var colors = __nccwpck_require__(81);
+
+module['exports'] = (function () {
+  var rainbowColors = ['red', 'yellow', 'green', 'blue', 'magenta']; //RoY G BiV
+  return function (letter, i, exploded) {
+    if (letter === " ") {
+      return letter;
+    } else {
+      return colors[rainbowColors[i++ % rainbowColors.length]](letter);
+    }
+  };
+})();
+
+
+
+/***/ }),
+
+/***/ 51594:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+var colors = __nccwpck_require__(81);
+
+module['exports'] = (function () {
+  var available = ['underline', 'inverse', 'grey', 'yellow', 'red', 'green', 'blue', 'white', 'cyan', 'magenta'];
+  return function(letter, i, exploded) {
+    return letter === " " ? letter : colors[available[Math.round(Math.random() * (available.length - 1))]](letter);
+  };
+})();
+
+/***/ }),
+
+/***/ 38335:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+var colors = __nccwpck_require__(81);
+
+module['exports'] = function (letter, i, exploded) {
+  return i % 2 === 0 ? letter : colors.inverse(letter);
+};
+
+/***/ }),
+
+/***/ 31474:
+/***/ ((module) => {
+
+/*
+The MIT License (MIT)
+
+Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+*/
+
+var styles = {};
+module['exports'] = styles;
+
+var codes = {
+  reset: [0, 0],
+
+  bold: [1, 22],
+  dim: [2, 22],
+  italic: [3, 23],
+  underline: [4, 24],
+  inverse: [7, 27],
+  hidden: [8, 28],
+  strikethrough: [9, 29],
+
+  black: [30, 39],
+  red: [31, 39],
+  green: [32, 39],
+  yellow: [33, 39],
+  blue: [34, 39],
+  magenta: [35, 39],
+  cyan: [36, 39],
+  white: [37, 39],
+  gray: [90, 39],
+  grey: [90, 39],
+
+  bgBlack: [40, 49],
+  bgRed: [41, 49],
+  bgGreen: [42, 49],
+  bgYellow: [43, 49],
+  bgBlue: [44, 49],
+  bgMagenta: [45, 49],
+  bgCyan: [46, 49],
+  bgWhite: [47, 49],
+
+  // legacy styles for colors pre v1.0.0
+  blackBG: [40, 49],
+  redBG: [41, 49],
+  greenBG: [42, 49],
+  yellowBG: [43, 49],
+  blueBG: [44, 49],
+  magentaBG: [45, 49],
+  cyanBG: [46, 49],
+  whiteBG: [47, 49]
+
+};
+
+Object.keys(codes).forEach(function (key) {
+  var val = codes[key];
+  var style = styles[key] = [];
+  style.open = '\u001b[' + val[0] + 'm';
+  style.close = '\u001b[' + val[1] + 'm';
+});
+
+/***/ }),
+
+/***/ 8422:
+/***/ ((module) => {
+
+/*
+The MIT License (MIT)
+
+Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+*/
+
+var argv = process.argv;
+
+module.exports = (function () {
+  if (argv.indexOf('--no-color') !== -1 ||
+    argv.indexOf('--color=false') !== -1) {
+    return false;
+  }
+
+  if (argv.indexOf('--color') !== -1 ||
+    argv.indexOf('--color=true') !== -1 ||
+    argv.indexOf('--color=always') !== -1) {
+    return true;
+  }
+
+  if (process.stdout && !process.stdout.isTTY) {
+    return false;
+  }
+
+  if (process.platform === 'win32') {
+    return true;
+  }
+
+  if ('COLORTERM' in process.env) {
+    return true;
+  }
+
+  if (process.env.TERM === 'dumb') {
+    return false;
+  }
+
+  if (/^screen|^xterm|^vt100|color|ansi|cygwin|linux/i.test(process.env.TERM)) {
+    return true;
+  }
+
+  return false;
+})();
+
+/***/ }),
+
+/***/ 73895:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+//
+// Remark: Requiring this file will use the "safe" colors API which will not touch String.prototype
+//
+//   var colors = require('colors/safe);
+//   colors.red("foo")
+//
+//
+var colors = __nccwpck_require__(81);
+module['exports'] = colors;
 
 /***/ }),
 
@@ -13222,7 +14195,7 @@ module.exports = class Choices {
 
 "use strict";
 
-var chalk = __nccwpck_require__(92546);
+var chalk = __nccwpck_require__(9845);
 var figures = __nccwpck_require__(5762);
 
 /**
@@ -13276,7 +14249,7 @@ var _ = {
   defaults: __nccwpck_require__(24528),
   clone: __nccwpck_require__(10003),
 };
-var chalk = __nccwpck_require__(92546);
+var chalk = __nccwpck_require__(9845);
 var runAsync = __nccwpck_require__(40923);
 var { filter, flatMap, share, take, takeUntil } = __nccwpck_require__(77987);
 var Choices = __nccwpck_require__(90382);
@@ -13438,7 +14411,7 @@ var _ = {
   map: __nccwpck_require__(37209),
   isString: __nccwpck_require__(14006),
 };
-var chalk = __nccwpck_require__(92546);
+var chalk = __nccwpck_require__(9845);
 var cliCursor = __nccwpck_require__(30086);
 var figures = __nccwpck_require__(5762);
 var { map, takeUntil } = __nccwpck_require__(77987);
@@ -13724,7 +14697,7 @@ var _ = {
   extend: __nccwpck_require__(41592),
   isBoolean: __nccwpck_require__(51132),
 };
-var chalk = __nccwpck_require__(92546);
+var chalk = __nccwpck_require__(9845);
 var { take, takeUntil } = __nccwpck_require__(77987);
 var Base = __nccwpck_require__(51744);
 var observe = __nccwpck_require__(10141);
@@ -13830,7 +14803,7 @@ module.exports = ConfirmPrompt;
  * `editor` type prompt
  */
 
-var chalk = __nccwpck_require__(92546);
+var chalk = __nccwpck_require__(9845);
 var editAsync = (__nccwpck_require__(99045)/* .editAsync */ .Wl);
 var Base = __nccwpck_require__(51744);
 var observe = __nccwpck_require__(10141);
@@ -13944,7 +14917,7 @@ var _ = {
   isNumber: __nccwpck_require__(83981),
   findIndex: __nccwpck_require__(33516),
 };
-var chalk = __nccwpck_require__(92546);
+var chalk = __nccwpck_require__(9845);
 var { map, takeUntil } = __nccwpck_require__(77987);
 var Base = __nccwpck_require__(51744);
 var Separator = __nccwpck_require__(43353);
@@ -14227,7 +15200,7 @@ module.exports = ExpandPrompt;
  * `input` type prompt
  */
 
-var chalk = __nccwpck_require__(92546);
+var chalk = __nccwpck_require__(9845);
 var { map, takeUntil } = __nccwpck_require__(77987);
 var Base = __nccwpck_require__(51744);
 var observe = __nccwpck_require__(10141);
@@ -14353,7 +15326,7 @@ var _ = {
   findIndex: __nccwpck_require__(33516),
   isString: __nccwpck_require__(14006),
 };
-var chalk = __nccwpck_require__(92546);
+var chalk = __nccwpck_require__(9845);
 var figures = __nccwpck_require__(5762);
 var cliCursor = __nccwpck_require__(30086);
 var runAsync = __nccwpck_require__(40923);
@@ -14604,7 +15577,7 @@ module.exports = NumberPrompt;
  * `password` type prompt
  */
 
-var chalk = __nccwpck_require__(92546);
+var chalk = __nccwpck_require__(9845);
 var { map, takeUntil } = __nccwpck_require__(77987);
 var Base = __nccwpck_require__(51744);
 var observe = __nccwpck_require__(10141);
@@ -14730,7 +15703,7 @@ var _ = {
   isNumber: __nccwpck_require__(83981),
   findIndex: __nccwpck_require__(33516),
 };
-var chalk = __nccwpck_require__(92546);
+var chalk = __nccwpck_require__(9845);
 var { map, takeUntil } = __nccwpck_require__(77987);
 var Base = __nccwpck_require__(51744);
 var Separator = __nccwpck_require__(43353);
@@ -15410,7 +16383,7 @@ var _ = {
   sum: __nccwpck_require__(4230),
   flatten: __nccwpck_require__(87774),
 };
-var chalk = __nccwpck_require__(92546);
+var chalk = __nccwpck_require__(9845);
 
 /**
  * The paginator returns a subset of the choices if the list is too long.
@@ -15729,6 +16702,432 @@ exports.fetchAsyncQuestionProperty = function (question, prop, answers) {
       return question;
     })
   );
+};
+
+
+/***/ }),
+
+/***/ 9845:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+const ansiStyles = __nccwpck_require__(3902);
+const {stdout: stdoutColor, stderr: stderrColor} = __nccwpck_require__(28201);
+const {
+	stringReplaceAll,
+	stringEncaseCRLFWithFirstIndex
+} = __nccwpck_require__(85651);
+
+const {isArray} = Array;
+
+// `supportsColor.level` → `ansiStyles.color[name]` mapping
+const levelMapping = [
+	'ansi',
+	'ansi',
+	'ansi256',
+	'ansi16m'
+];
+
+const styles = Object.create(null);
+
+const applyOptions = (object, options = {}) => {
+	if (options.level && !(Number.isInteger(options.level) && options.level >= 0 && options.level <= 3)) {
+		throw new Error('The `level` option should be an integer from 0 to 3');
+	}
+
+	// Detect level if not set manually
+	const colorLevel = stdoutColor ? stdoutColor.level : 0;
+	object.level = options.level === undefined ? colorLevel : options.level;
+};
+
+class ChalkClass {
+	constructor(options) {
+		// eslint-disable-next-line no-constructor-return
+		return chalkFactory(options);
+	}
+}
+
+const chalkFactory = options => {
+	const chalk = {};
+	applyOptions(chalk, options);
+
+	chalk.template = (...arguments_) => chalkTag(chalk.template, ...arguments_);
+
+	Object.setPrototypeOf(chalk, Chalk.prototype);
+	Object.setPrototypeOf(chalk.template, chalk);
+
+	chalk.template.constructor = () => {
+		throw new Error('`chalk.constructor()` is deprecated. Use `new chalk.Instance()` instead.');
+	};
+
+	chalk.template.Instance = ChalkClass;
+
+	return chalk.template;
+};
+
+function Chalk(options) {
+	return chalkFactory(options);
+}
+
+for (const [styleName, style] of Object.entries(ansiStyles)) {
+	styles[styleName] = {
+		get() {
+			const builder = createBuilder(this, createStyler(style.open, style.close, this._styler), this._isEmpty);
+			Object.defineProperty(this, styleName, {value: builder});
+			return builder;
+		}
+	};
+}
+
+styles.visible = {
+	get() {
+		const builder = createBuilder(this, this._styler, true);
+		Object.defineProperty(this, 'visible', {value: builder});
+		return builder;
+	}
+};
+
+const usedModels = ['rgb', 'hex', 'keyword', 'hsl', 'hsv', 'hwb', 'ansi', 'ansi256'];
+
+for (const model of usedModels) {
+	styles[model] = {
+		get() {
+			const {level} = this;
+			return function (...arguments_) {
+				const styler = createStyler(ansiStyles.color[levelMapping[level]][model](...arguments_), ansiStyles.color.close, this._styler);
+				return createBuilder(this, styler, this._isEmpty);
+			};
+		}
+	};
+}
+
+for (const model of usedModels) {
+	const bgModel = 'bg' + model[0].toUpperCase() + model.slice(1);
+	styles[bgModel] = {
+		get() {
+			const {level} = this;
+			return function (...arguments_) {
+				const styler = createStyler(ansiStyles.bgColor[levelMapping[level]][model](...arguments_), ansiStyles.bgColor.close, this._styler);
+				return createBuilder(this, styler, this._isEmpty);
+			};
+		}
+	};
+}
+
+const proto = Object.defineProperties(() => {}, {
+	...styles,
+	level: {
+		enumerable: true,
+		get() {
+			return this._generator.level;
+		},
+		set(level) {
+			this._generator.level = level;
+		}
+	}
+});
+
+const createStyler = (open, close, parent) => {
+	let openAll;
+	let closeAll;
+	if (parent === undefined) {
+		openAll = open;
+		closeAll = close;
+	} else {
+		openAll = parent.openAll + open;
+		closeAll = close + parent.closeAll;
+	}
+
+	return {
+		open,
+		close,
+		openAll,
+		closeAll,
+		parent
+	};
+};
+
+const createBuilder = (self, _styler, _isEmpty) => {
+	const builder = (...arguments_) => {
+		if (isArray(arguments_[0]) && isArray(arguments_[0].raw)) {
+			// Called as a template literal, for example: chalk.red`2 + 3 = {bold ${2+3}}`
+			return applyStyle(builder, chalkTag(builder, ...arguments_));
+		}
+
+		// Single argument is hot path, implicit coercion is faster than anything
+		// eslint-disable-next-line no-implicit-coercion
+		return applyStyle(builder, (arguments_.length === 1) ? ('' + arguments_[0]) : arguments_.join(' '));
+	};
+
+	// We alter the prototype because we must return a function, but there is
+	// no way to create a function with a different prototype
+	Object.setPrototypeOf(builder, proto);
+
+	builder._generator = self;
+	builder._styler = _styler;
+	builder._isEmpty = _isEmpty;
+
+	return builder;
+};
+
+const applyStyle = (self, string) => {
+	if (self.level <= 0 || !string) {
+		return self._isEmpty ? '' : string;
+	}
+
+	let styler = self._styler;
+
+	if (styler === undefined) {
+		return string;
+	}
+
+	const {openAll, closeAll} = styler;
+	if (string.indexOf('\u001B') !== -1) {
+		while (styler !== undefined) {
+			// Replace any instances already present with a re-opening code
+			// otherwise only the part of the string until said closing code
+			// will be colored, and the rest will simply be 'plain'.
+			string = stringReplaceAll(string, styler.close, styler.open);
+
+			styler = styler.parent;
+		}
+	}
+
+	// We can move both next actions out of loop, because remaining actions in loop won't have
+	// any/visible effect on parts we add here. Close the styling before a linebreak and reopen
+	// after next line to fix a bleed issue on macOS: https://github.com/chalk/chalk/pull/92
+	const lfIndex = string.indexOf('\n');
+	if (lfIndex !== -1) {
+		string = stringEncaseCRLFWithFirstIndex(string, closeAll, openAll, lfIndex);
+	}
+
+	return openAll + string + closeAll;
+};
+
+let template;
+const chalkTag = (chalk, ...strings) => {
+	const [firstString] = strings;
+
+	if (!isArray(firstString) || !isArray(firstString.raw)) {
+		// If chalk() was called by itself or with a string,
+		// return the string itself as a string.
+		return strings.join(' ');
+	}
+
+	const arguments_ = strings.slice(1);
+	const parts = [firstString.raw[0]];
+
+	for (let i = 1; i < firstString.length; i++) {
+		parts.push(
+			String(arguments_[i - 1]).replace(/[{}\\]/g, '\\$&'),
+			String(firstString.raw[i])
+		);
+	}
+
+	if (template === undefined) {
+		template = __nccwpck_require__(52664);
+	}
+
+	return template(chalk, parts.join(''));
+};
+
+Object.defineProperties(Chalk.prototype, styles);
+
+const chalk = Chalk(); // eslint-disable-line new-cap
+chalk.supportsColor = stdoutColor;
+chalk.stderr = Chalk({level: stderrColor ? stderrColor.level : 0}); // eslint-disable-line new-cap
+chalk.stderr.supportsColor = stderrColor;
+
+module.exports = chalk;
+
+
+/***/ }),
+
+/***/ 52664:
+/***/ ((module) => {
+
+"use strict";
+
+const TEMPLATE_REGEX = /(?:\\(u(?:[a-f\d]{4}|\{[a-f\d]{1,6}\})|x[a-f\d]{2}|.))|(?:\{(~)?(\w+(?:\([^)]*\))?(?:\.\w+(?:\([^)]*\))?)*)(?:[ \t]|(?=\r?\n)))|(\})|((?:.|[\r\n\f])+?)/gi;
+const STYLE_REGEX = /(?:^|\.)(\w+)(?:\(([^)]*)\))?/g;
+const STRING_REGEX = /^(['"])((?:\\.|(?!\1)[^\\])*)\1$/;
+const ESCAPE_REGEX = /\\(u(?:[a-f\d]{4}|{[a-f\d]{1,6}})|x[a-f\d]{2}|.)|([^\\])/gi;
+
+const ESCAPES = new Map([
+	['n', '\n'],
+	['r', '\r'],
+	['t', '\t'],
+	['b', '\b'],
+	['f', '\f'],
+	['v', '\v'],
+	['0', '\0'],
+	['\\', '\\'],
+	['e', '\u001B'],
+	['a', '\u0007']
+]);
+
+function unescape(c) {
+	const u = c[0] === 'u';
+	const bracket = c[1] === '{';
+
+	if ((u && !bracket && c.length === 5) || (c[0] === 'x' && c.length === 3)) {
+		return String.fromCharCode(parseInt(c.slice(1), 16));
+	}
+
+	if (u && bracket) {
+		return String.fromCodePoint(parseInt(c.slice(2, -1), 16));
+	}
+
+	return ESCAPES.get(c) || c;
+}
+
+function parseArguments(name, arguments_) {
+	const results = [];
+	const chunks = arguments_.trim().split(/\s*,\s*/g);
+	let matches;
+
+	for (const chunk of chunks) {
+		const number = Number(chunk);
+		if (!Number.isNaN(number)) {
+			results.push(number);
+		} else if ((matches = chunk.match(STRING_REGEX))) {
+			results.push(matches[2].replace(ESCAPE_REGEX, (m, escape, character) => escape ? unescape(escape) : character));
+		} else {
+			throw new Error(`Invalid Chalk template style argument: ${chunk} (in style '${name}')`);
+		}
+	}
+
+	return results;
+}
+
+function parseStyle(style) {
+	STYLE_REGEX.lastIndex = 0;
+
+	const results = [];
+	let matches;
+
+	while ((matches = STYLE_REGEX.exec(style)) !== null) {
+		const name = matches[1];
+
+		if (matches[2]) {
+			const args = parseArguments(name, matches[2]);
+			results.push([name].concat(args));
+		} else {
+			results.push([name]);
+		}
+	}
+
+	return results;
+}
+
+function buildStyle(chalk, styles) {
+	const enabled = {};
+
+	for (const layer of styles) {
+		for (const style of layer.styles) {
+			enabled[style[0]] = layer.inverse ? null : style.slice(1);
+		}
+	}
+
+	let current = chalk;
+	for (const [styleName, styles] of Object.entries(enabled)) {
+		if (!Array.isArray(styles)) {
+			continue;
+		}
+
+		if (!(styleName in current)) {
+			throw new Error(`Unknown Chalk style: ${styleName}`);
+		}
+
+		current = styles.length > 0 ? current[styleName](...styles) : current[styleName];
+	}
+
+	return current;
+}
+
+module.exports = (chalk, temporary) => {
+	const styles = [];
+	const chunks = [];
+	let chunk = [];
+
+	// eslint-disable-next-line max-params
+	temporary.replace(TEMPLATE_REGEX, (m, escapeCharacter, inverse, style, close, character) => {
+		if (escapeCharacter) {
+			chunk.push(unescape(escapeCharacter));
+		} else if (style) {
+			const string = chunk.join('');
+			chunk = [];
+			chunks.push(styles.length === 0 ? string : buildStyle(chalk, styles)(string));
+			styles.push({inverse, styles: parseStyle(style)});
+		} else if (close) {
+			if (styles.length === 0) {
+				throw new Error('Found extraneous } in Chalk template literal');
+			}
+
+			chunks.push(buildStyle(chalk, styles)(chunk.join('')));
+			chunk = [];
+			styles.pop();
+		} else {
+			chunk.push(character);
+		}
+	});
+
+	chunks.push(chunk.join(''));
+
+	if (styles.length > 0) {
+		const errMessage = `Chalk template literal is missing ${styles.length} closing bracket${styles.length === 1 ? '' : 's'} (\`}\`)`;
+		throw new Error(errMessage);
+	}
+
+	return chunks.join('');
+};
+
+
+/***/ }),
+
+/***/ 85651:
+/***/ ((module) => {
+
+"use strict";
+
+
+const stringReplaceAll = (string, substring, replacer) => {
+	let index = string.indexOf(substring);
+	if (index === -1) {
+		return string;
+	}
+
+	const substringLength = substring.length;
+	let endIndex = 0;
+	let returnValue = '';
+	do {
+		returnValue += string.substr(endIndex, index - endIndex) + substring + replacer;
+		endIndex = index + substringLength;
+		index = string.indexOf(substring, endIndex);
+	} while (index !== -1);
+
+	returnValue += string.substr(endIndex);
+	return returnValue;
+};
+
+const stringEncaseCRLFWithFirstIndex = (string, prefix, postfix, index) => {
+	let endIndex = 0;
+	let returnValue = '';
+	do {
+		const gotCR = string[index - 1] === '\r';
+		returnValue += string.substr(endIndex, (gotCR ? index - 1 : index) - endIndex) + prefix + (gotCR ? '\r\n' : '\n') + postfix;
+		endIndex = index + 1;
+		index = string.indexOf('\n', endIndex);
+	} while (index !== -1);
+
+	returnValue += string.substr(endIndex);
+	return returnValue;
+};
+
+module.exports = {
+	stringReplaceAll,
+	stringEncaseCRLFWithFirstIndex
 };
 
 
@@ -49834,8 +51233,9 @@ module.exports.setGracefulCleanup = setGracefulCleanup;
 const canary = __nccwpck_require__(58349);
 const email = __nccwpck_require__(83418); // email.send(message, recipient, subject) all strings.
 const helper = __nccwpck_require__(28166);
-const tagRefs = ["GREENCREATE.Wijster.GasTreatment.Tot_Gas_From_ADs", "GREENCREATE.Wijster.GasTreatment.FT-73-0001", "GREENCREATE.Wijster.Flare.FT-65-0001_PV" ,"GREENCREATE.Wijster.BUU.Collective.Biogas_to_BUU","GREENCREATE.Wijster.BUU.Collective.Biomethane_to_Grid"];  // Total = GREENCREATE.Wijster.GasTreatment.Tot_Gas_From_ADs ||| CHPS = GREENCREATE.Wijster.GasTreatment.FT-73-0001 ||| Flare = GREENCREATE.Wijster.Flare.FT-65-0001_PV  ||| Biogas to BUU = GREENCREATE.Wijster.BUU.Collective.Biogas_to_BUU   ||| Biomethane to grid = GREENCREATE.Wijster.BUU.Collective.Biomethane_to_Grid
-const friendlyNames = ["Biogas (m3)", "CHPs (m3)", "Flare (m3)", "BUU (m3)","Grid (m3)"] // table names for each tag
+const chalk = __nccwpck_require__(92546);
+
+
 // const startDates = ["08-01-2023","09-01-2023","10-01-2023","11-01-2023", "12-01-2023", "01-01-2024"]; // List of required dates here
 // const endDates = ["09-01-2023","10-01-2023","11-01-2023","12-01-2023", "01-01-2024", "02-01-2024 06:00:00"]; // List of required dates here
 const intervalTime = "10 seconds";
@@ -49853,7 +51253,7 @@ let userTokenBody = {
   timezone: "Eastern Standard Time",
 };
 
-const wijster_totalisers = async (startDates, endDates, emailAddress) => { // both arrays as per commented out const above
+const wijster_totalisers = async (startDates, endDates, emailAddress, tagRefs, friendlyNames) => { // both arrays as per commented out const above
   try {
     let result = await canary.getUserToken(credentials, userTokenBody);
 
@@ -49913,8 +51313,9 @@ const wijster_totalisers = async (startDates, endDates, emailAddress) => { // bo
         process.stdout.write('\n');
         // Log all results after the for loop
        // resultArray.forEach(resultLine => console.log(resultLine));
-       
+       let cliTab = helper.createCliTable(resultArray);
         let table = helper.createTable(resultArray);
+        console.log(chalk.yellow(cliTab));
 
         try {
           email.send(table, emailAddress, "GC CoPilot Export"); // greencreatedata@outlook.com
@@ -49939,10 +51340,10 @@ module.exports = wijster_totalisers;
 /***/ }),
 
 /***/ 28166:
-/***/ ((module) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 // helper.js
-
+const cliTable = __nccwpck_require__(65865);
 // Function to extract "v" values from the data array
 function extractValues(data) {
   // Check if the input data is an array
@@ -50202,6 +51603,46 @@ function generateDateObject(period, dwm) {
 }
 
 
+function filterTargetArray(resultArr, sourceArr, targetArr) {
+  const resultIndexes = resultArr.map(item => sourceArr.indexOf(item));
+  
+  const filteredTargetArr = resultIndexes
+    .filter(index => index !== -1) // Filter out elements not found in sourceArr
+    .map(index => targetArr[index]);
+
+  return filteredTargetArr;
+}
+
+function createCliTable(data) {
+  // Extract unique Ref and Period values
+  const uniqueRefs = [...new Set(data.map(item => item.Name))];
+  const uniquePeriods = [...new Set(data.map(item => item.Period))];
+
+  // Create the table with header
+  const table = new cliTable({
+    head: ['Period', ...uniqueRefs],
+  });
+
+  // Populate the table body
+  uniquePeriods.forEach(period => {
+    const rowData = [period];
+
+    uniqueRefs.forEach(name => {
+      const matchingItem = data.find(item => item.Name === name && item.Period === period);
+      const total = matchingItem ? matchingItem.Total.toLocaleString() : 0;
+      rowData.push(total);
+    });
+
+    // Push the row to the table
+    table.push(rowData);
+  });
+
+  // Display the table in the console
+  return table.toString();
+}
+
+
+
 
 // Export the functions as properties of an object
 module.exports = {
@@ -50217,6 +51658,8 @@ module.exports = {
   filterArrayByString,
   createTable,
   generateDateObject,
+  filterTargetArray,
+  createCliTable,
 
   // Add other functions here
 };
@@ -50254,12 +51697,54 @@ module.exports = {
       if (error) {
         console.log(error);
       } else {
-        console.log("Email sent successfully!");
+       // console.log("Email sent successfully!");
       }
     });
   },
 };
 
+
+/***/ }),
+
+/***/ 46678:
+/***/ ((module) => {
+
+// tag.js
+
+// Define arrays
+const WijsterReferences = [
+    "GREENCREATE.Wijster.GasTreatment.Tot_Gas_From_ADs", 
+    "GREENCREATE.Wijster.GasTreatment.FT-73-0001", 
+    "GREENCREATE.Wijster.Flare.FT-65-0001_PV", 
+    "GREENCREATE.Wijster.BUU.Collective.Biogas_to_BUU", 
+    "GREENCREATE.Wijster.BUU.Collective.Biomethane_to_Grid"
+];
+
+const WijsterNames = [
+    "Biogas (m3)", 
+    "CHPs (m3)", 
+    "Flare (m3)", 
+    "BUU (m3)", 
+    "Grid (m3)"
+];
+
+const KentReferences = [
+
+];
+
+const KentNames = [
+    'Tag1',
+    'Tag2',
+    'Tag3'
+];
+
+// Export the variables
+module.exports = {
+    WijsterReferences,
+    WijsterNames,
+    KentReferences,
+    KentNames
+};
 
 /***/ }),
 
@@ -50580,11 +52065,11 @@ module.exports = JSON.parse('{"name":"nodemailer","version":"6.9.8","description
 var __webpack_exports__ = {};
 // This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
 (() => {
-const wijster_totals = __nccwpck_require__(6669)
+const wijster_totals = __nccwpck_require__(6669);
 const helper = __nccwpck_require__(28166);
-
-console.log(
-    `
+const tags = __nccwpck_require__(46678);
+const chalk = __nccwpck_require__(92546);
+console.log(chalk.greenBright(`
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@%///@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -50610,12 +52095,27 @@ console.log(
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-Author Will Shearer 2023 - Green Create, GC CoPilot AI v1.0
-
-`);
+Dev. Will Shearer 2023 - Green Create, Axiom Soft-Totals 0.6
+`));
 
 async function run() {
     const inquirer = __nccwpck_require__(30840);
+
+    // New Questions
+    const siteQuestion = {
+        type: 'list',
+        message: 'Which site do you want to process data for?',
+        name: 'site',
+        choices: ['Kent', 'Wijster'],
+    };
+
+    const tagsQuestion = {
+        type: 'checkbox',
+        message: 'Select tags to process (spacebar for multi-select):',
+        name: 'selectedTags',
+        choices: answers => tags[answers.site + 'References'],
+        when: answers => answers.site !== undefined,
+    };
 
     const periodQuestion = {
         type: 'list',
@@ -50657,17 +52157,28 @@ async function run() {
         },
     };
 
-    const answers = await inquirer.prompt([periodQuestion, numberOfXQuestion, emailQuestion]);
-    const { period, numberOfX, email } = answers;
-    console.log(`You've selected to process ${numberOfX} ${period}(s), the exported data will be sent to ${email}`);
+    const questions = [siteQuestion, tagsQuestion, periodQuestion, numberOfXQuestion, emailQuestion];
+
+    const answers = await inquirer.prompt(questions);
+    const { site, selectedTags, period, numberOfX, email } = answers;
+
+    console.log(`You've selected to process ${numberOfX} ${period}(s) at ${site}, the exported data will be sent to ${email} for the following tags:`);
+        selectedTags.forEach(item => {
+        console.log(chalk.green(item)); // Change color as needed
+      });
+
+    const selectedNames = helper.filterTargetArray(selectedTags,tags[answers.site + 'References'],tags[answers.site + 'Names'])
+    
+    // Do something with selectedTags if needed
+    
     const dates = helper.generateDateObject(numberOfX, period);
     const sendTo = answers.email;
     const startDates = dates.startDates;
     const endDates = dates.endDates;
 
     (async () => {
-       let func = await wijster_totals(startDates, endDates, sendTo);
-       run().catch(error => console.error('Error:', error));
+        let func = await wijster_totals(startDates, endDates, sendTo,selectedTags,selectedNames);
+        run().catch(error => console.error('Error:', error));
     })();
 }
 

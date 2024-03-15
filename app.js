@@ -1,8 +1,8 @@
-const wijster_totals = require("./scripts/totaliser")
+const wijster_totals = require("./scripts/totaliser");
 const helper = require("./tools/helpers");
-
-console.log(
-    `
+const tags = require("./tools/tags");
+const chalk = require('chalk');
+console.log(chalk.greenBright(`
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@%///@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -28,12 +28,27 @@ console.log(
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-Author Will Shearer 2023 - Green Create, GC CoPilot AI v1.0
-
-`);
+Dev. Will Shearer 2023 - Green Create, Axiom Soft-Totals 0.6
+`));
 
 async function run() {
     const inquirer = require('inquirer');
+
+    // New Questions
+    const siteQuestion = {
+        type: 'list',
+        message: 'Which site do you want to process data for?',
+        name: 'site',
+        choices: ['Kent', 'Wijster'],
+    };
+
+    const tagsQuestion = {
+        type: 'checkbox',
+        message: 'Select tags to process (spacebar for multi-select):',
+        name: 'selectedTags',
+        choices: answers => tags[answers.site + 'References'],
+        when: answers => answers.site !== undefined,
+    };
 
     const periodQuestion = {
         type: 'list',
@@ -75,17 +90,28 @@ async function run() {
         },
     };
 
-    const answers = await inquirer.prompt([periodQuestion, numberOfXQuestion, emailQuestion]);
-    const { period, numberOfX, email } = answers;
-    console.log(`You've selected to process ${numberOfX} ${period}(s), the exported data will be sent to ${email}`);
+    const questions = [siteQuestion, tagsQuestion, periodQuestion, numberOfXQuestion, emailQuestion];
+
+    const answers = await inquirer.prompt(questions);
+    const { site, selectedTags, period, numberOfX, email } = answers;
+
+    console.log(`You've selected to process ${numberOfX} ${period}(s) at ${site}, the exported data will be sent to ${email} for the following tags:`);
+        selectedTags.forEach(item => {
+        console.log(chalk.green(item)); // Change color as needed
+      });
+
+    const selectedNames = helper.filterTargetArray(selectedTags,tags[answers.site + 'References'],tags[answers.site + 'Names'])
+    
+    // Do something with selectedTags if needed
+    
     const dates = helper.generateDateObject(numberOfX, period);
     const sendTo = answers.email;
     const startDates = dates.startDates;
     const endDates = dates.endDates;
 
     (async () => {
-       let func = await wijster_totals(startDates, endDates, sendTo);
-       run().catch(error => console.error('Error:', error));
+        let func = await wijster_totals(startDates, endDates, sendTo,selectedTags,selectedNames);
+        run().catch(error => console.error('Error:', error));
     })();
 }
 

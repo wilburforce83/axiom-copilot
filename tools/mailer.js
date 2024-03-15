@@ -25,7 +25,7 @@ module.exports = {
       if (error) {
         console.log(error);
       } else {
-        console.log("Email sent successfully!");
+       // console.log("Email sent successfully!");
       }
     });
   },
